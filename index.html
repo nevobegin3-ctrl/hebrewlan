@@ -120,7 +120,7 @@
         let dashboardChartInstance = null;
         let currentQuizData = [];
         let currentDifficulty = 'medium'; 
-        const XP_RATES = { 'easy': 20, 'medium': 40, 'hard': 60, 'reading': 50 }; // Increased XP for harder content
+        const XP_RATES = { 'easy': 20, 'medium': 40, 'hard': 60, 'mega-medium': 50, 'mega-hard': 70, 'mega-degree': 100, 'reading': 50 };
         
         let megaQuizTimer;
         let timeLeft = 120;
@@ -128,7 +128,7 @@
         let isReadingQuiz = false;
         let currentReadingId = null;
 
-        let userProgress = JSON.parse(localStorage.getItem('verbHubProgress_v11')) || { 
+        let userProgress = JSON.parse(localStorage.getItem('verbHubProgress_v12')) || { 
             modules: {}, reading: {}, totalXP: 0, megaQuizHighScore: 0 
         };
 
@@ -179,7 +179,7 @@
 
         function addXP(amount) {
             userProgress.totalXP += amount;
-            localStorage.setItem('verbHubProgress_v11', JSON.stringify(userProgress));
+            localStorage.setItem('verbHubProgress_v12', JSON.stringify(userProgress));
             updateGlobalXP();
         }
 
@@ -208,7 +208,7 @@
 
         function clearProgress() {
             if(confirm("האם אתה בטוח שברצונך לאפס את כל ההתקדמות? פעולה זו אינה הפיכה.")) {
-                localStorage.removeItem('verbHubProgress_v11');
+                localStorage.removeItem('verbHubProgress_v12');
                 userProgress = { modules: {}, reading: {}, totalXP: 0, megaQuizHighScore: 0 };
                 updateGlobalXP();
                 loadModule('dashboard');
@@ -223,7 +223,7 @@
         }
 
         // ==========================================
-        // 2. DATA STORES - HEAVILY UPGRADED (BAGRUT LEVEL)
+        // 2. DATA STORES (10 Questions Per Level Per Module)
         // ==========================================
 
         const appData = {
@@ -242,160 +242,298 @@
                     { root: "ב-ר-א (הפעיל)", past: "הִבְרִיא", present: "מַבְרִיא", future: "יַבְרִיא", infinitive: "לְהַבְרִיא" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "הפועל 'מַמְצִיא' שייך לגזרת נל\"א כי בעבר נסתר הוא מנוסח כ:", options: [{text:"הִמְצִיא", isCorrect:true, rationale:"צורת העבר (הוא אתמול) חושפת את האות א' בסוף השורש."}, {text:"מָצָא", isCorrect:false, rationale:"'מָצָא' זה בניין קל, הפועל המקורי מַמְצִיא הוא בבניין הפעיל."}, {text:"נִמְצָא", isCorrect:false, rationale:"זה בניין נפעל, לא הפעיל."}] },
-                    { difficulty: "easy", question: "איזו מן הצורות הבאות מציגה א' נחה?", options: [{text:"קָרָאתִי", isCorrect:true, rationale:"ה-א' סוגרת הברה לפני ה-ת' ולכן היא אינה נהגית (קרא-תי)."}, {text:"יִקְרְאוּ", isCorrect:false, rationale:"ה-א' משמשת כעיצור ויש אחריה שורוק."}, {text:"קוֹרְאִים", isCorrect:false, rationale:"ה-א' מנוקדת בחיריק ולכן היא עיצורית."}] },
-                    { difficulty: "easy", question: "מהו השורש של המילה 'תַּבְרוּאָה'?", options: [{text:"ב-ר-א", isCorrect:true, rationale:"המילה קשורה לפועל 'הבריא', השורש הוא ב-ר-א (נל\"א)."}, {text:"ת-ב-ר", isCorrect:false, rationale:"ה-ת' היא מוספית של משקל תַּקְטֵלָה."}, {text:"ב-ר-ה", isCorrect:false, rationale:"זו אינה גזרת נל\"י/ה, המילה המקורית מסתיימת ב-א'."}] },
-                    { difficulty: "medium", question: "לפניך המשפט: 'הוא יִמָּצֵא אשם בדין'. מהו בניין הפועל?", options: [{text:"נפעל", isCorrect:true, rationale:"התחילית יִ והדגש החזק בפ' הפועל (מ') מציינים עתיד של בניין נפעל."}, {text:"פיעל", isCorrect:false, rationale:"בפיעל בעתיד נצפה לראות תנועות של יְמַצֵּא."}, {text:"התפעל", isCorrect:false, rationale:"בהתפעל מופיעה התחילית ת' (יִתְמַצֵּא)."}] },
-                    { difficulty: "medium", question: "מה השורש של הפועל המודגש: 'הכוחות **נֶחְבְּאוּ** במערה'?", options: [{text:"ח-ב-א", isCorrect:true, rationale:"הוא אתמול נֶחְבָּא -> בניין נפעל, השורש ח-ב-א."}, {text:"ח-ב-ה", isCorrect:false, rationale:"מבנה בניין נפעל בנל\"י/ה נראה אחרת (למשל: נִדְחָה, נִגְלָה). כאן אנו רואים א'."}, {text:"נ-ח-ב", isCorrect:false, rationale:"ה-נ' היא אות אית\"ן/מוספית בניין, לא שורש."}] },
-                    { difficulty: "medium", question: "מהי הצורה התקנית בעתיד גוף 'הן' לשורש ק-ר-א בבניין קל?", options: [{text:"תִּקְרֶאנָה", isCorrect:true, rationale:"בגזרת נל\"א מוסיפים את סיומת 'נָה' לנקבות בעתיד. ה-א' נשמרת לפני הסיומת בצירה."}, {text:"תִּקְרֶינָה", isCorrect:false, rationale:"זו סיומת שמתאימה לגזרת נל\"י/ה (כמו תִּבְנֶינָה)."}, {text:"יִקְרְאוּ", isCorrect:false, rationale:"זו צורת עתיד רבים (הם), לא רבות."}] },
-                    { difficulty: "hard", question: "באיזה מן הפעלים הבאים חלה תופעה של א' עיצורית (לא נחה)?", options: [{text:"צָמְאוּ", isCorrect:true, rationale:"כאשר מתווספת סיומת של תנועה (וּ), ה-א' מקבלת שווא נח או נחטפת, והיא נהגית לחלוטין כעיצור."}, {text:"מִלֵּאתֶם", isCorrect:false, rationale:"ה-א' לפני הסיומת 'תם' נחה לחלוטין."}, {text:"נִמְצָאת", isCorrect:false, rationale:"בצורת בינוני נקבה, ה-א' נחה לפני ה-ת'."}] },
-                    { difficulty: "hard", question: "מבין השמות הבאים, איזה מהם גזור משורש נל\"א?", options: [{text:"מִקְרָאָה", isCorrect:true, rationale:"משורש ק-ר-א. המשקל מִקְטָלָה."}, {text:"מִשְׁתֶּה", isCorrect:false, rationale:"משורש ש-ת-ה (נל\"י/ה)."}, {text:"מִבְנֶה", isCorrect:false, rationale:"משורש ב-נ-ה (נל\"י/ה)."}] },
-                    { difficulty: "hard", question: "מהי צורת הציווי (אתם) של הפועל 'הִמְצִיא' (שורש מ-צ-א, הפעיל)?", options: [{text:"הַמְצִיאוּ", isCorrect:true, rationale:"בבניין הפעיל ציווי, התחילית ה' מנוקדת בפתח, וה-א' נשמרת בעיצוריות שלה."}, {text:"הַמְצְאוּ", isCorrect:false, rationale:"חסרה ה-י' של בניין הפעיל."}, {text:"מִצְאוּ", isCorrect:false, rationale:"זו צורת הציווי של בניין קל."}] },
-                    { difficulty: "hard", question: "לפניך המילה 'מִרְפָּאָה'. מהו משקלה הדקדוקי?", options: [{text:"מִקְטָלָה", isCorrect:true, rationale:"שורש ר-פ-א. מ + ר(פ) + פ(ע) + א(ל) + ה. המשקל הוא מִקְטָלָה למקומות."}, {text:"מִקְטֶלֶת", isCorrect:false, rationale:"משקל זה מסתיים ב-ת', כמו מחברת."}, {text:"מַקְטֵלָה", isCorrect:false, rationale:"התחילית מ' מנוקדת בחיריק (מִרפאה), ולא בפתח."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "הפועל 'מַמְצִיא' שייך לגזרת נל\"א כי בעבר נסתר הוא מנוסח כ:", options: [{text:"הִמְצִיא", isCorrect:true, rationale:"צורת העבר חושפת את ה-א'."}, {text:"מָצָא", isCorrect:false}, {text:"נִמְצָא", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזו צורה מציגה א' נחה?", options: [{text:"קָרָאתִי", isCorrect:true, rationale:"ה-א' סוגרת הברה."}, {text:"יִקְרְאוּ", isCorrect:false}, {text:"קוֹרְאִים", isCorrect:false}] },
+                    { difficulty: "easy", question: "מהו השורש של המילה 'תַּבְרוּאָה'?", options: [{text:"ב-ר-א", isCorrect:true, rationale:"מהפועל להבריא."}, {text:"ת-ב-ר", isCorrect:false}, {text:"ב-ר-ה", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזה פועל שייך לגזרת נל\"א?", options: [{text:"הִקְפִּיא", isCorrect:true, rationale:"מסתיים באות א' -> ק-פ-א."}, {text:"הִשְׁקָה", isCorrect:false}, {text:"הִגִּיעַ", isCorrect:false}] },
+                    { difficulty: "easy", question: "השלם: האות א' בשורש י-צ-א מוגדרת כ:", options: [{text:"ל' הפועל", isCorrect:true, rationale:"היא האות השלישית בשורש."}, {text:"פ' הפועל", isCorrect:false}, {text:"ע' הפועל", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של הפועל שָׁנָא?", options: [{text:"ש-נ-א", isCorrect:true, rationale:"מסיים בא'."}, {text:"ש-נ-ה", isCorrect:false}, {text:"ש-ו-נ", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של נִמְצָא?", options: [{text:"מ-צ-א", isCorrect:true, rationale:"בניין נפעל."}, {text:"נ-מ-צ", isCorrect:false}, {text:"מ-צ-ה", isCorrect:false}] },
+                    { difficulty: "easy", question: "איך אומרים בעבר גוף אנחנו: ק-ר-א?", options: [{text:"קָרָאנוּ", isCorrect:true, rationale:"בלי נפילת א'."}, {text:"קָרַנּוּ", isCorrect:false}, {text:"קָרִינוּ", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזה מהבאים הוא שם פועל של בניין קל בנל\"א?", options: [{text:"לִקְרֹא", isCorrect:true, rationale:"כמו לשמור."}, {text:"לְהַקְרִיא", isCorrect:false}, {text:"לִקְרִיאָה", isCorrect:false}] },
+                    { difficulty: "easy", question: "מהי האות המזהה את גזרת נל\"א?", options: [{text:"האות א' בסוף השורש", isCorrect:true, rationale:"נחי ל' א'."}, {text:"האות ה' בסוף", isCorrect:false}, {text:"האות י' בהתחלה", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "לפניך המשפט: 'הוא יִמָּצֵא אשם בדין'. מהו בניין הפועל?", options: [{text:"נפעל", isCorrect:true, rationale:"התחילית יִ והדגש בפ'."}, {text:"פיעל", isCorrect:false}, {text:"התפעל", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה השורש של: 'הכוחות נֶחְבְּאוּ במערה'?", options: [{text:"ח-ב-א", isCorrect:true, rationale:"נפעל עבר."}, {text:"ח-ב-ה", isCorrect:false}, {text:"נ-ח-ב", isCorrect:false}] },
+                    { difficulty: "medium", question: "מהי הצורה התקנית בעתיד 'הן' ק-ר-א (קל)?", options: [{text:"תִּקְרֶאנָה", isCorrect:true, rationale:"סיומת 'נָה' עם א' נחה."}, {text:"תִּקְרֶינָה", isCorrect:false}, {text:"יִקְרְאוּ", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה השורש של המילה 'מִקְרָא'?", options: [{text:"ק-ר-א", isCorrect:true, rationale:"משקל מִקְטָל."}, {text:"מ-ק-ר", isCorrect:false}, {text:"ק-ר-ה", isCorrect:false}] },
+                    { difficulty: "medium", question: "מהי צורת העתיד המדויקת של ל-ק-א (נפעל)?", options: [{text:"יִלָּקֵא", isCorrect:true, rationale:"דגש בל' וצירה בסוף (כמו ימצא)."}, {text:"יִלָּקָא", isCorrect:false}, {text:"יִלָּקֶה", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזה משפט מכיל פועל נל\"א?", options: [{text:"הוא התפלא מאוד.", isCorrect:true, rationale:"שורש פ-ל-א."}, {text:"הוא התגלה פתאום.", isCorrect:false}, {text:"הוא התכונן לזה.", isCorrect:false}] },
+                    { difficulty: "medium", question: "הפועל מְבַטֵּא שייך לבניין:", options: [{text:"פיעל", isCorrect:true, rationale:"מ' בשווא ודגש ב-ט'."}, {text:"הפעיל", isCorrect:false}, {text:"פועל", isCorrect:false}] },
+                    { difficulty: "medium", question: "מהו שם הפעולה של ק-ר-א בבניין קל?", options: [{text:"קְרִיאָה", isCorrect:true, rationale:"משקל קטילה."}, {text:"מִקְרָא", isCorrect:false}, {text:"הַקְרָאָה", isCorrect:false}] },
+                    { difficulty: "medium", question: "בחר את הצורה השגויה:", options: [{text:"מָלֵאתִי", isCorrect:true, rationale:"הצורה היא מִלֵּאתִי (פיעל) או מָלֵאתִי אבל נכתב לרוב מָלָאתִי בקל."}, {text:"מָצָאתִי", isCorrect:false}, {text:"קָרָאתִי", isCorrect:false}] },
+                    { difficulty: "medium", question: "השורש ר-פ-א בבניין פיעל עבר (הוא):", options: [{text:"רִפֵּא", isCorrect:true, rationale:"דגש ב-פ', א' נחה."}, {text:"רָפָא", isCorrect:false}, {text:"הִרְפִּיא", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "באיזה פועל ה-א' עיצורית ולא נחה?", options: [{text:"צָמְאוּ", isCorrect:true, rationale:"לפני 'ו', ה-א' חטופה ונהגית."}, {text:"מִלֵּאתֶם", isCorrect:false}, {text:"נִמְצָאת", isCorrect:false}] },
+                    { difficulty: "hard", question: "מבין השמות הבאים, איזה מהם גזור משורש נל\"א?", options: [{text:"מִקְרָאָה", isCorrect:true, rationale:"משורש ק-ר-א. המשקל מִקְטָלָה."}, {text:"מִשְׁתֶּה", isCorrect:false}, {text:"מִבְנֶה", isCorrect:false}] },
+                    { difficulty: "hard", question: "מהי צורת הציווי (אתם) של הפועל 'הִמְצִיא'?", options: [{text:"הַמְצִיאוּ", isCorrect:true, rationale:"הפעיל ציווי מתחיל בפתח ב-ה'."}, {text:"הַמְצְאוּ", isCorrect:false}, {text:"מִצְאוּ", isCorrect:false}] },
+                    { difficulty: "hard", question: "המשקל של 'מִרְפָּאָה':", options: [{text:"מִקְטָלָה", isCorrect:true, rationale:"מ + ר(פ) + פ(ע) + א(ל) + ה."}, {text:"מִקְטֶלֶת", isCorrect:false}, {text:"מַקְטֵלָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "צורת נקבה רבות עתיד מ-צ-א (נפעל):", options: [{text:"תִּמָּצֶאנָה", isCorrect:true, rationale:"צירה בסוף + נה."}, {text:"תִּמָּצֶינָה", isCorrect:false}, {text:"תִּמְצֶאנָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה השורש של הַשָּׁאַת (עצות)?", options: [{text:"נ-ש-א", isCorrect:true, rationale:"זה חריג! שורש נ-ש-א שמאבד את ה-נ' (כמו חפ\"נ) ומסתיים בא'."}, {text:"ש-א-ה", isCorrect:false}, {text:"ש-ו-א", isCorrect:false}] },
+                    { difficulty: "hard", question: "איזו מילה אינה שייכת למשפחת נל\"א?", options: [{text:"גּוֹבֶה", isCorrect:true, rationale:"לגבות כסף - נל\"י/ה."}, {text:"גּוֹמֵא", isCorrect:false}, {text:"טָמֵא", isCorrect:false}] },
+                    { difficulty: "hard", question: "השורש פ-ל-א בבניין הופעל עבר:", options: [{text:"הֻפְלָא", isCorrect:true, rationale:"תחילית הֻ ו-א' נחה."}, {text:"הֻפְלֶה", isCorrect:false}, {text:"הֻפְלִיא", isCorrect:false}] },
+                    { difficulty: "hard", question: "מהו השם הנגזר מהשורש ח-ט-א במשקל קַטֶּלֶת?", options: [{text:"חַטֶּטֶת", isCorrect:false, rationale:"שורש חטט"}, {text:"חַטֶּאֶת", isCorrect:true, rationale:"שם מחלה מח-ט-א (נל\"א מתאים למשקל זה בחולם חסר/סגול, כאן קַטֶּאֶת - למשל פלצת/קצרת -> חטאת, אבל במשקל מחלות זה נדיר. הצורה התקנית היא חַטֶּאֶת)."}, {text:"חַטָּאָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה הבניין של מִתְמַלְּאִים?", options: [{text:"התפעל", isCorrect:true, rationale:"תחילית מת, דגש בל'."}, {text:"פיעל", isCorrect:false}, {text:"נפעל", isCorrect:false}] }
                 ]
             },
             "nliy": {
                 id: "nliy", label: "נל\"י/ה", icon: "🍂", title: "גזרת נל\"י/ה (נחי ל' י/ה)",
-                intro: "שורשים שהאות האחרונה שלהם (ל' הפועל) היא י' אקוסטית שבכתב לרוב מומרת ב-ה'. גזרה רחבה ובעלת חריגים רבים המופיעים תדיר בבגרויות.",
+                intro: "שורשים שהאות האחרונה שלהם (ל' הפועל) היא י' אקוסטית שבכתב לרוב מומרת ב-ה'.",
                 concepts: [
-                    { title: "נפילת ל' הפועל", content: "כאשר מתווספת לפועל סיומת שמתחילה בתנועה (כמו וּ של רבים, או ִי של נוכחת), ה-ה'/י' של השורש נופלת לחלוטין! (קָנָה + וּ = קָנוּ. תִּבְנֶה + י = תִּבְנִי)." },
-                    { title: "ההבחנה בין בניין פיעל להפעיל", content: "בבגרות נוהגים לבלבל בין בינוני (הווה) פיעל להפעיל. מְגַלֶּה (פיעל - יש דגש חזק בע' הפועל) לעומת מַגְלֶה (הפעיל - אין דגש, המ' פתוחה). תמיד חפשו את הדגש!" },
-                    { title: "סיומת עתיד רבות וציווי רבות", content: "סיומת מובהקת לגזרה זו היא 'ינָה'. בבניין קל: תִּבְנֶינָה (הן יבנו), או בציווי בְּנֶינָה. בבניין הפעיל: תַּרְאֶינָה. (בניגוד לנל\"א שם הסיומת היא רק 'נָה')." },
-                    { title: "שם הפועל ושם הפעולה", content: "שם הפועל בכל הבניינים תמיד מסתיים ב-'וֹת' (לִבְנוֹת, לְגַלּוֹת, לְהַרְאוֹת). שם הפעולה לרוב מסתיים ב-'יָּה' או 'וּת' (בְּנִיָּה, רְאִיָּה, צִפִּיָּה, הַשְׁקָיָה)." }
+                    { title: "נפילת ל' הפועל", content: "ה-ה'/י' של השורש נופלת לחלוטין לפני סיומות תנועה (קָנָה + וּ = קָנוּ)." },
+                    { title: "ההבחנה בין פיעל להפעיל", content: "מְגַלֶּה (פיעל - יש דגש חזק) לעומת מַגְלֶה (הפעיל - אין דגש)." },
+                    { title: "סיומת עתיד רבות", content: "בגזרה זו הסיומת ל'הן' בעתיד היא 'ינָה' (תִּבְנֶינָה, תַּרְאֶינָה)." },
+                    { title: "שם פועל ושם פעולה", content: "שם הפועל מסתיים ב-'וֹת' (לִבְנוֹת). שם הפעולה מסתיים ב-'יָּה' או 'וּת' (בְּנִיָּה, צִפִּיָּה)." }
                 ],
                 conjugations: [
-                    { root: "ק-נ-ה (קל)", past: "קָנָה", present: "קוֹנֶה", future: "יִקְנֶה", infinitive: "לִקְנוֹת" },
+                    { root: "ק-נ-ה", past: "קָנָה", present: "קוֹנֶה", future: "יִקְנֶה", infinitive: "לִקְנוֹת" },
                     { root: "ש-נ-ה (התפעל)", past: "הִשְׁתַּנָּה", present: "מִשְׁתַּנֶּה", future: "יִשְׁתַּנֶּה", infinitive: "לְהִשְׁתַּנּוֹת" },
                     { root: "ר-א-ה (נפעל)", past: "נִרְאָה", present: "נִרְאֶה", future: "יֵרָאֶה", infinitive: "לְהֵרָאוֹת" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "הפועל 'נִרְאֶה' מורכב מהשורש ר-א-ה. מדוע הוא משויך לנל\"י/ה ולא לנל\"א?", options: [{text:"מפני שבזמן עבר נסתר הפועל הוא 'נִרְאָה' (מסתיימת ב-ה' ברוב הנטיות ונוהגת כנל\"י/ה)", isCorrect:true, rationale:"השורש ר-א-ה הוא שורש חריג: אמנם כתובה בו א', אך ל' הפועל מתנהגת לכל דבר כדין נל\"י/ה (רואים זאת בסיומות: לראות, ראייה)."}, {text:"כי אין בו א' כלל.", isCorrect:false, rationale:"יש בו א', אך היא ע' הפועל ולא ל' הפועל."}, {text:"כי זהו פועל יוצא דופן של גזרת השלמים.", isCorrect:false, rationale:"הוא בהחלט לא שלמים, ל' הפועל משתנה ונופלת."}] },
-                    { difficulty: "easy", question: "מהי צורת שם הפעולה של השורש צ-פ-ה בבניין פיעל?", options: [{text:"צִפִּיָּה", isCorrect:true, rationale:"שם הפעולה של פיעל בנל\"י/ה מסתיים לרוב ב-יָּה (כמו שחייה, קנייה, צפייה)."}, {text:"לְצַפּוֹת", isCorrect:false, rationale:"זו צורת שם הפועל (Infinitive), לא שם הפעולה (Noun)."}, {text:"תַּצְפִּית", isCorrect:false, rationale:"זה שם עצם ממשקל תַּקְטִיל, לא שם פעולה של פיעל."}] },
-                    { difficulty: "easy", question: "איזו מן המילים הבאות נגזרה משורש בגזרת נל\"י/ה?", options: [{text:"הַשְׁקָיָה", isCorrect:true, rationale:"משורש ש-ק-ה בבניין הפעיל. ה-י' מרמזת על מקור ה-ה'."}, {text:"הַשְׁקָפָה", isCorrect:false, rationale:"משורש ש-ק-פ (שלמים)."}, {text:"הַשְׁמָטָה", isCorrect:false, rationale:"משורש ש-מ-ט (שלמים)."}] },
-                    { difficulty: "medium", question: "לפניך המשפט: 'החיילים **פִּנּוּ** את השטח'. מה קרה ל-ל' הפועל?", options: [{text:"היא נפלה לחלוטין (התאפסה)", isCorrect:true, rationale:"השורש הוא פ-נ-ה. הוספת הסיומת 'וּ' דוחקת את ה-ה'/י' של השורש והיא מושמטת לגמרי בכתב ובהגייה."}, {text:"היא נשארה אך אינה נהגית (נחה)", isCorrect:false, rationale:"היא אינה קיימת כלל במילה 'פִּנּוּ'."}, {text:"היא הפכה לאות ו'", isCorrect:false, rationale:"ה-ו' היא סיומת הגוף (רבים), לא תחליף של ל' הפועל."}] },
-                    { difficulty: "medium", question: "מה הבניין של הפועל 'מַקְנֶה'?", options: [{text:"הפעיל", isCorrect:true, rationale:"התחילית מַ' וסיומת הֶ' מעידות על הווה בבניין הפעיל (בעבר: הִקְנָה)."}, {text:"פיעל", isCorrect:false, rationale:"בפיעל היינו מצפים לדגש ולתנועת שווא/קובוץ במוספית (מְקַנֶּה)."}, {text:"פעל", isCorrect:false, rationale:"ההווה בבניין פעל הוא 'קוֹנֶה'."}] },
-                    { difficulty: "medium", question: "מה השורש של המילה 'הִשְׁתַּהוּת'?", options: [{text:"ש-ה-ה", isCorrect:true, rationale:"זהו שם הפעולה של בניין התפעל. הוא אתמול 'הִשְׁתַּהָה' -> ש-ה-ה."}, {text:"ת-ה-ה", isCorrect:false, rationale:"ה-ת' היא מוספית של בניין התפעל."}, {text:"ש-ת-ה", isCorrect:false, rationale:"ה-ת' אינה חלק מהשורש, הפועל אינו 'השתתה'."}] },
-                    { difficulty: "hard", question: "באיזה מן הפעלים הבאים חלה הידמות מלאה של פ' הפועל, לצד היותו שייך לנל\"י/ה?", options: [{text:"יִטֶּה", isCorrect:true, rationale:"השורש נ-ט-ה. ה-נ' הידמתה ל-ט' (דגש חזק ב-ט'), וה-ה' בסוף מסמנת נל\"י/ה."}, {text:"יִבְנֶה", isCorrect:false, rationale:"אין כאן הידמות, פ' הפועל (ב) מופיעה כרגיל."}, {text:"יִדַּע", isCorrect:false, rationale:"שורש י-ד-ע, זו גזרת נפי/ו, אין ה' בסוף."}] },
-                    { difficulty: "hard", question: "לפניך הפועל 'הוּרְאוּ' (הוצגו). איזה ניתוח מורפולוגי מתאר אותו במדויק?", options: [{text:"שורש ר-א-ה, בניין הופעל, עבר נסתרים", isCorrect:true, rationale:"שורש נל\"י/ה חריג (ראה), שמקבל קידומת של בניין הופעל (הוּ)."}, {text:"שורש י-ר-ה, בניין הופעל, עבר נסתרים", isCorrect:false, rationale:"השורש י-ר-ה בהופעל יהיה הוּרוּ (ירו אותם)."}, {text:"שורש ר-א-ה, בניין הפעיל, עבר נסתרים", isCorrect:false, rationale:"הפעיל הוא הֶרְאוּ (הם הראו למישהו אחר)."}] },
-                    { difficulty: "hard", question: "מהי הצורה התקנית ל'אנחנו בעתיד נרצה (מלשון רצון)'?", options: [{text:"נִרְצֶה", isCorrect:true, rationale:"שורש ר-צ-ה בבניין פעל. עתיד מדברים ינוקד בחיריק באות אית\"ן וסגול בסוף."}, {text:"נַרְצֶה", isCorrect:false, rationale:"זו צורת העתיד של בניין הפעיל (נרצה הרצאה)."}, {text:"נִרְצָה", isCorrect:false, rationale:"אין תנועת קמץ בסוף נל\"י/ה בעתיד בניין קל."}] },
-                    { difficulty: "hard", question: "מה השורש והבניין של המילה 'מְבֻלֶּה'?", options: [{text:"ב-ל-ה, פֻּעַל", isCorrect:true, rationale:"התחילית מְ והקיבוץ ב-פ' הפועל, יחד עם דגש ב-ל' מעידים על בניין פועל סביל. השורש הוא ב-ל-ה (בלוי)."}, {text:"ב-ל-ה, פִּעֵל", isCorrect:false, rationale:"בפיעל מדובר בצורה האקטיבית 'מְבַלֶּה'."}, {text:"ב-ו-ל, הֻפְעַל", isCorrect:false, rationale:"בהופעל מופיעה התחילית הוּ."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "הפועל 'נִרְאֶה' משויך לנל\"י/ה כי:", options: [{text:"בעבר נסתר הוא 'נִרְאָה' ונוהג כנל\"י/ה", isCorrect:true}, {text:"אין בו א' כלל.", isCorrect:false}, {text:"זהו חריג של שלמים.", isCorrect:false}] },
+                    { difficulty: "easy", question: "שם הפעולה של צ-פ-ה (פיעל):", options: [{text:"צִפִּיָּה", isCorrect:true}, {text:"לְצַפּוֹת", isCorrect:false}, {text:"תַּצְפִּית", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזו מילה משורש נל\"י/ה?", options: [{text:"הַשְׁקָיָה", isCorrect:true, rationale:"ש-ק-ה."}, {text:"הַשְׁקָפָה", isCorrect:false}, {text:"הַשְׁמָטָה", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של 'בָּנָה'?", options: [{text:"ב-נ-ה/י", isCorrect:true}, {text:"ב-נ-נ", isCorrect:false}, {text:"ב-ו-נ", isCorrect:false}] },
+                    { difficulty: "easy", question: "איך אומרים בעבר אתם לשורש ק-נ-ה?", options: [{text:"קְנִיתֶם", isCorrect:true, rationale:"ה' הופכת לי'."}, {text:"קְנָאתֶם", isCorrect:false}, {text:"קָנוּ", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזו סיומת מעידה על שם פועל בנל\"י/ה?", options: [{text:"וֹת", isCorrect:true, rationale:"כמו לקנות."}, {text:"וּת", isCorrect:false}, {text:"יָה", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של 'תַּעֲשֶׂה'?", options: [{text:"ע-ש-ה", isCorrect:true}, {text:"ת-ע-ש", isCorrect:false}, {text:"ע-ש-ש", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזו מילה בבניין התפעל?", options: [{text:"מִתְגַּלֶּה", isCorrect:true}, {text:"מְגַלֶּה", isCorrect:false}, {text:"הִתְגַּלּוּת", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של המילה 'שָׂחוּ'?", options: [{text:"ש-ח-ה", isCorrect:true}, {text:"ש-ח-ח", isCorrect:false}, {text:"ש-ו-ח", isCorrect:false}] },
+                    { difficulty: "easy", question: "איך נאמר עבר של ר-צ-ה בגוף אנחנו?", options: [{text:"רָצִינוּ", isCorrect:true}, {text:"רָצָאנוּ", isCorrect:false}, {text:"נִרְצֶה", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "במשפט 'החיילים פִּנּוּ' מה קרה לל' הפועל?", options: [{text:"נפלה לחלוטין", isCorrect:true}, {text:"היא נחה", isCorrect:false}, {text:"הפכה לו'", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה הבניין של מַקְנֶה?", options: [{text:"הפעיל", isCorrect:true, rationale:"מ' פתוחה."}, {text:"פיעל", isCorrect:false}, {text:"פעל", isCorrect:false}] },
+                    { difficulty: "medium", question: "שורש המילה 'הִשְׁתַּהוּת'?", options: [{text:"ש-ה-ה", isCorrect:true}, {text:"ת-ה-ה", isCorrect:false}, {text:"ש-ת-ה", isCorrect:false}] },
+                    { difficulty: "medium", question: "עתיד רבות ש-ח-ה (קל):", options: [{text:"תִּשְׂחֶינָה", isCorrect:true}, {text:"תִּשְׂחֶאנָה", isCorrect:false}, {text:"תִּשְׂחוּ", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה השורש של 'הַרְצָאָה'?", options: [{text:"ר-צ-ה", isCorrect:true, rationale:"מהפועל המרצה -> הפעיל."}, {text:"ר-צ-א", isCorrect:false}, {text:"ה-ר-צ", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזו מילה שייכת לבניין פיעל?", options: [{text:"מְנַקֶּה", isCorrect:true, rationale:"דגש ב-ק'."}, {text:"מַשְׁקֶה", isCorrect:false}, {text:"מִשְׁתַּנֶּה", isCorrect:false}] },
+                    { difficulty: "medium", question: "צורת הנסמך של 'תַּקָּלָה'?", options: [{text:"תַּקָּלַת", isCorrect:true}, {text:"תַּקְלוֹת", isCorrect:false}, {text:"תַּקָּלָה", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה השורש של 'צָפִינוּ'?", options: [{text:"צ-פ-ה", isCorrect:true, rationale:"י' היא תמורת ה' של השורש."}, {text:"צ-פ-נ", isCorrect:false}, {text:"צ-ו-פ", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה הבניין של 'נִדְחָה'?", options: [{text:"נפעל", isCorrect:true}, {text:"הפעיל", isCorrect:false}, {text:"פעל", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה קורה לל' הפועל ב'תִּקְנִי'?", options: [{text:"נופלת", isCorrect:true, rationale:"קנה + י נוכחת = תקני (ה' נפלה)."}, {text:"הופכת לי'", isCorrect:false}, {text:"נשארת", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "איזו תופעה בפועל 'יִטֶּה'?", options: [{text:"הידמות מלאה ונל\"י/ה", isCorrect:true, rationale:"שורש נ-ט-ה."}, {text:"י' הופכת לו'", isCorrect:false}, {text:"אין בו ה'", isCorrect:false}] },
+                    { difficulty: "hard", question: "ניתוח מורפולוגי של 'הוּרְאוּ':", options: [{text:"ר-א-ה, הופעל, עבר", isCorrect:true}, {text:"י-ר-ה, הופעל", isCorrect:false}, {text:"ר-א-ה, הפעיל", isCorrect:false}] },
+                    { difficulty: "hard", question: "עתיד אנחנו של ר-צ-ה (פעל):", options: [{text:"נִרְצֶה", isCorrect:true}, {text:"נַרְצֶה", isCorrect:false}, {text:"נִרְצָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "השורש והבניין של 'מְבֻלֶּה':", options: [{text:"ב-ל-ה, פֻּעַל", isCorrect:true}, {text:"ב-ל-ה, פִּעֵל", isCorrect:false}, {text:"ב-ו-ל, הֻפְעַל", isCorrect:false}] },
+                    { difficulty: "hard", question: "מהו השורש של 'הוּדָה'?", options: [{text:"י-ד-ה", isCorrect:true, rationale:"חריג נפי/ו וגם נל\"י/ה."}, {text:"ה-ד-ה", isCorrect:false}, {text:"ו-ד-ה", isCorrect:false}] },
+                    { difficulty: "hard", question: "צורת העתיד (נסתר) להפעיל י-ר-ה:", options: [{text:"יוֹרֶה", isCorrect:true, rationale:"נפי/ו + נל\"י/ה (הי' הופכת לוֹ והה' נשארת)."}, {text:"יִירֶה", isCorrect:false}, {text:"יוֹרִיא", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה השורש של הַשְׁהָיָה?", options: [{text:"ש-ה-ה", isCorrect:true, rationale:"הפעיל לש-ה-ה. להשהות."}, {text:"ה-ש-ה", isCorrect:false}, {text:"ש-ו-ה", isCorrect:false}] },
+                    { difficulty: "hard", question: "הפועל תִּתְלוֶּה שייך לבניין:", options: [{text:"התפעל", isCorrect:true, rationale:"שורש ל-ו-ה."}, {text:"פיעל", isCorrect:false}, {text:"פעל", isCorrect:false}] },
+                    { difficulty: "hard", question: "מהי צורת עבר-הוא של צ-ו-ה בפיעל?", options: [{text:"צִוָּה", isCorrect:true}, {text:"צָוָה", isCorrect:false}, {text:"מְצַוֶּה", isCorrect:false}] },
+                    { difficulty: "hard", question: "צורת הציווי לנוכחות (אתן) של ב-נ-ה (קל):", options: [{text:"בְּנֶינָה", isCorrect:true}, {text:"תִּבְנֶינָה", isCorrect:false}, {text:"בְּנוּ", isCorrect:false}] }
                 ]
             },
             "navy": {
                 id: "navy", label: "נעו\"י", icon: "⚖️", title: "גזרת נעו\"י (ע\"ו/י)",
-                intro: "גזרה הדורשת זיהוי מורכב כיוון ש-'ע הפועל חסרה (נחה) או הופכת לאות ניקוד ברוב הנטיות.",
+                intro: "גזרה בה 'ע הפועל חסרה או הופכת לאות ניקוד ברוב הנטיות.",
                 concepts: [
-                    { title: "זיהוי בעבר (2 אותיות בלבד)", content: "כאשר מעבירים לעבר נסתר (בניין קל), נותרות רק שתי אותיות! קָם (ק-ו-ם), שָׁר (ש-י-ר), צָם (צ-ו-ם), לָן (ל-ו-נ)." },
-                    { title: "מציאת האות החסרה (ו' או י')", content: "כדי לדעת אם האמצעית היא ו' או י', מעבירים לשם פועל: לָקוּם -> ו', לָשִׁיר -> י', לָדוּן -> ו'." },
-                    { title: "הבניינים הדגושים (פולל, פולל, התפולל)", content: "מאחר שלא ניתן לדגוש אות שאינה קיימת (ו'/י'), בניינים פיעל/פועל/התפעל מקבלים צורה מורחבת בה מכפילים את ל' הפועל. קוֹמֵם (במקום קִוֵּם), מְכוֹנֵן, הִתְרוֹצֵץ." },
-                    { title: "הופעל והפעיל - חזרת השורש", content: "בבניינים אלו ה-ו' וה-י' משתקפות בתנועות. הֵקִים (צירה - הפעיל), הוּקַם (שורוק - הופעל). הטריק: להעביר לשם פועל קל (לקום)." }
+                    { title: "זיהוי בעבר", content: "העברה לעבר נסתר (בניין קל) חושפת 2 אותיות בלבד! קָם, שָׁר, טָס." },
+                    { title: "מציאת ו'/י'", content: "לָקוּם -> ו', לָשִׁיר -> י'." },
+                    { title: "הבניינים הדגושים", content: "במקום פיעל מקבלים צורה מורחבת פולל. קוֹמֵם, הִתְרוֹצֵץ." },
+                    { title: "הופעל והפעיל", content: "ו/י משתקפות בתנועות. הֵקִים (צירה - הפעיל), הוּקַם (שורוק - הופעל)." }
                 ],
                 conjugations: [
-                    { root: "ק-ו-ם (קל)", past: "קָם", present: "קָם / קָמָה", future: "יָקוּם", infinitive: "לָקוּם" },
+                    { root: "ק-ו-ם", past: "קָם", present: "קָם", future: "יָקוּם", infinitive: "לָקוּם" },
                     { root: "כ-ו-נ (הפעיל)", past: "הֵכִין", present: "מֵכִין", future: "יָכִין", infinitive: "לְהָכִין" },
                     { root: "ר-ו-צ (פולל)", past: "רוֹצֵץ", present: "מְרוֹצֵץ", future: "יְרוֹצֵץ", infinitive: "לְרוֹצֵץ" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "הפועל 'נָח' שייך לגזרת נעו\"י מכיוון ש:", options: [{text:"בזמן עבר גוף 'הוא' יש לו שתי אותיות שורש בלבד.", isCorrect:true, rationale:"כמו כל גזרת נעו\"י בבניין קל, האות האמצעית נחה ומותירה שתי אותיות גלויות בלבד."}, {text:"הוא מתחיל באות נ'.", isCorrect:false, rationale:"ה-נ' היא אות השורש הראשונה (פ' הפועל), אך זו אינה גזרת חפ\"נ כי ה-נ' לא נופלת."}, {text:"יש בו צליל של קמץ.", isCorrect:false, rationale:"קמץ קיים בכל הגזרות בבניין קל (אָכַל, שָׁמַר)."}] },
-                    { difficulty: "easy", question: "כיצד נגלה אם השורש של 'טָס' הוא ט-ו-ס או ט-י-ס?", options: [{text:"נעביר לשם פועל: לָטוּס, לכן ו'.", isCorrect:true, rationale:"שם הפועל הוא כלי הבדיקה הטוב ביותר למציאת ע' הפועל הנחה בגזרה זו."}, {text:"נעביר לעתיד גוף 'אתה': תָּטִיס, לכן י'.", isCorrect:false, rationale:"תטיס זה בניין הפעיל של שורש אחר. הבדיקה צריכה להיות בבניין קל."}, {text:"זה תמיד ו' בגזרה זו.", isCorrect:false, rationale:"שגיאה. יש גם שורשים עם י' כמו שָׁר (לָשִׁיר -> ש-י-ר)."}] },
-                    { difficulty: "easy", question: "מה השורש של הפועל <b>רָץ</b>?", options: [{text:"ר-ו-צ", isCorrect:true, rationale:"שם הפועל הוא לָרוּץ."}, {text:"ר-י-צ", isCorrect:false, rationale:"אין פועל לָרִיץ בעברית התקנית."}, {text:"ר-צ-צ", isCorrect:false, rationale:"זהו שורש של גזרת הכפולים (רָצַץ)."}] },
-                    { difficulty: "medium", question: "לפניך הפועל 'הֵמִיר' (החליף כסף). מהו השורש ושם הפועל שלו בבניין קל?", options: [{text:"מ-ו-ר, לָמוּר", isCorrect:true, rationale:"הֵמִיר הוא בניין הפעיל. השורש בבניין קל הוא מָר, ושם הפועל לָמוּר (תמורה)."}, {text:"מ-י-ר, לָמִיר", isCorrect:false, rationale:"אמנם יש י' בפועל הֵמִיר, אך זו תנועת החיריק של הפעיל, השורש המקורי הוא ו'."}, {text:"ה-מ-ר, לַהֲמֹר", isCorrect:false, rationale:"ה-ה' היא מוספית של בניין הפעיל ואינה חלק מהשורש."}] },
-                    { difficulty: "medium", question: "מהו הבניין של הפועל 'כּוֹנֵן' (הקים/ייסד)?", options: [{text:"פולל", isCorrect:true, rationale:"צורת פיעל בגזרת נעו\"י מכפילה את האות האחרונה ומקבלת חולם - תבנית זו נקראת פולל."}, {text:"פיעל", isCorrect:false, rationale:"בפיעל רגיל אמור להיות דגש באות האמצעית (כִּוֵּן)."}, {text:"הפועל", isCorrect:false, rationale:"אין בניין כזה בעברית."}] },
-                    { difficulty: "medium", question: "איזו מהמילים הבאות היא בינוני (הווה) של בניין קל בגזרת נעו\"י?", options: [{text:"בָּא", isCorrect:true, rationale:"בגזרת נעו\"י, צורת ההווה והעבר בבניין קל זהות לחלוטין (הוא אתמול בָּא, הוא היום בָּא)."}, {text:"מֵבִיא", isCorrect:false, rationale:"זה הווה של בניין הפעיל."}, {text:"נָסוֹג", isCorrect:false, rationale:"זה עבר/הווה של בניין נפעל."}] },
-                    { difficulty: "hard", question: "מה השורש של הפועל 'הִתְכּוֹנֵן'?", options: [{text:"כ-ו-נ", isCorrect:true, rationale:"זהו בניין התפולל (התפעל המורחב של נעו\"י). האות האחרונה (נ) הוכפלה. השורש המקורי הוא כ-ו-נ."}, {text:"כ-נ-נ", isCorrect:false, rationale:"אמנם יש שתי נ', אך הן נוצרו מהכפלה של התבנית, לא משורש כפול."}, {text:"ת-כ-נ", isCorrect:false, rationale:"ה-ת' היא מוספית הבניין."}] },
-                    { difficulty: "hard", question: "מה ההבדל בין הפועל 'הֵקִים' לפועל 'מֵקִים'?", options: [{text:"זמן: הֵקִים זה בעבר, מֵקִים זה בהווה (בינוני)", isCorrect:true, rationale:"שניהם בבניין הפעיל משורש ק-ו-ם. ה' תחילית מסמלת עבר, מ' תחילית מסמלת הווה."}, {text:"בניין: הֵקִים זה הפעיל, מֵקִים זה פיעל", isCorrect:false, rationale:"שניהם בבניין הפעיל."}, {text:"אין הבדל מורפולוגי, רק סמנטי", isCorrect:false, rationale:"יש הבדל בזמן."}] },
-                    { difficulty: "hard", question: "איזו מן הצורות הבאות היא עתיד, גוף נסתר (הוא), בניין נפעל של השורש ס-ו-ג?", options: [{text:"יִסּוֹג", isCorrect:true, rationale:"בבניין נפעל עתיד של נעו\"י, פ' הפועל מקבלת דגש (כמו יִכּוֹן, יִמּוֹל) וע' הפועל מקבלת חולם."}, {text:"יָסוּג", isCorrect:false, rationale:"זו צורת בניין קל."}, {text:"יַסִּיג", isCorrect:false, rationale:"זה בניין הפעיל משורש אחר (נ-ס-ג, חפ\"נ)."}] },
-                    { difficulty: "hard", question: "האם השורש של 'הֵבִין' הוא ב-ו-נ או ב-י-נ?", options: [{text:"ב-י-נ", isCorrect:true, rationale:"חריג חשוב! בשורש זה צורת שם הפועל בקל היא לָבִין, ולכן האות האמצעית היא י' ולא ו'."}, {text:"ב-ו-נ", isCorrect:false, rationale:"אמנם רוב הפעלים מקבלים ו' (תבונה), אך השורש התקני ל'הבין' נחשב ב-י-נ בגלל שם הפועל להבין/לָבין."}, {text:"ה-ב-נ", isCorrect:false, rationale:"ה' היא מוספית הפעיל."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "למה 'נָח' שייך לנעו\"י?", options: [{text:"כי בעבר יש לו 2 אותיות שורש", isCorrect:true}, {text:"מתחיל ב-נ'", isCorrect:false}, {text:"יש בו קמץ", isCorrect:false}] },
+                    { difficulty: "easy", question: "איך נמצא את האמצעית ב'טָס'?", options: [{text:"שם פועל לָטוּס -> ו'", isCorrect:true}, {text:"עתיד תָּטִיס -> י'", isCorrect:false}, {text:"תמיד ו'", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של רָץ?", options: [{text:"ר-ו-צ", isCorrect:true}, {text:"ר-י-צ", isCorrect:false}, {text:"ר-צ-צ", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזה פועל משורש ש-י-ר?", options: [{text:"שָׁר", isCorrect:true}, {text:"שָׁרָה", isCorrect:false}, {text:"שָׁרַר", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה שם הפועל של דָּן?", options: [{text:"לָדוּן", isCorrect:true}, {text:"לְהַדִּין", isCorrect:false}, {text:"לְדַנֵּן", isCorrect:false}] },
+                    { difficulty: "easy", question: "השלם: השורש של צָם הוא __", options: [{text:"צ-ו-ם", isCorrect:true}, {text:"צ-מ-מ", isCorrect:false}, {text:"צ-י-ם", isCorrect:false}] },
+                    { difficulty: "easy", question: "איך אומרים אתם עבר לק-ו-ם?", options: [{text:"קַמְתֶּם", isCorrect:true}, {text:"קוּמְתֶּם", isCorrect:false}, {text:"קָמְתֶּם", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה משמעות האות ו' בנעו\"י?", options: [{text:"היא ע' הפועל שנחה/הופכת לתנועה", isCorrect:true}, {text:"היא מוספית של בניין פועל", isCorrect:false}, {text:"אות חיבור", isCorrect:false}] },
+                    { difficulty: "easy", question: "השורש ג-ו-ר מתאר אדם ש...", options: [{text:"גָּר", isCorrect:true}, {text:"גּוֹרֵר", isCorrect:false}, {text:"מִתְגַּרֶּה", isCorrect:false}] },
+                    { difficulty: "easy", question: "בניין קל הווה של ע-ו-פ (זכר):", options: [{text:"עָף", isCorrect:true}, {text:"עוֹפֵף", isCorrect:false}, {text:"מֵעִיף", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "הפועל 'הֵמִיר'. שורש ושם פועל בקל?", options: [{text:"מ-ו-ר, לָמוּר", isCorrect:true}, {text:"מ-י-ר, לָמִיר", isCorrect:false}, {text:"ה-מ-ר, לַהֲמֹר", isCorrect:false}] },
+                    { difficulty: "medium", question: "בניין של 'כּוֹנֵן'?", options: [{text:"פולל", isCorrect:true}, {text:"פיעל", isCorrect:false}, {text:"הפועל", isCorrect:false}] },
+                    { difficulty: "medium", question: "בינוני קל של נעו\"י:", options: [{text:"בָּא", isCorrect:true}, {text:"מֵבִיא", isCorrect:false}, {text:"נָסוֹג", isCorrect:false}] },
+                    { difficulty: "medium", question: "שורש ובניין של 'הוּכַח'?", options: [{text:"הופעל, כ-ו-ח", isCorrect:true}, {text:"הפעיל, נ-כ-ח", isCorrect:false}, {text:"הופעל, ו-כ-ח", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזו מילה אינה בבניין הפעיל?", options: [{text:"הוּקַם", isCorrect:true, rationale:"הופעל."}, {text:"הֵבִיא", isCorrect:false}, {text:"הֵקִים", isCorrect:false}] },
+                    { difficulty: "medium", question: "שורש המילה 'תְּנוּעָה':", options: [{text:"נ-ו-ע", isCorrect:true}, {text:"ת-נ-ע", isCorrect:false}, {text:"נ-ע-ע", isCorrect:false}] },
+                    { difficulty: "medium", question: "ההבדל בין סָב ל-סָבַב?", options: [{text:"סָב זה מנעו\"י (ס-ו-ב), סבב זה מהכפולים", isCorrect:true}, {text:"סב זה עבר, סבב זה עתיד", isCorrect:false}, {text:"אין הבדל", isCorrect:false}] },
+                    { difficulty: "medium", question: "בניין של פְּרוֹרֵר?", options: [{text:"פולל", isCorrect:true, rationale:"הכפלת הר' - פ-ו-ר."}, {text:"פיעל", isCorrect:false}, {text:"פועל", isCorrect:false}] },
+                    { difficulty: "medium", question: "שורש המילה 'מָקוֹם':", options: [{text:"ק-ו-ם", isCorrect:true}, {text:"מ-ק-ם", isCorrect:false}, {text:"ק-י-ם", isCorrect:false}] },
+                    { difficulty: "medium", question: "באיזה פועל ה-י' היא ע' הפועל?", options: [{text:"לָשִׂים (ש-י-מ)", isCorrect:true}, {text:"לִישֹׁן (י-ש-נ)", isCorrect:false}, {text:"לְיַסֵּד (י-ס-ד)", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "מה השורש של 'הִתְכּוֹנֵן'?", options: [{text:"כ-ו-נ", isCorrect:true}, {text:"כ-נ-נ", isCorrect:false}, {text:"ת-כ-נ", isCorrect:false}] },
+                    { difficulty: "hard", question: "הבדל בין הֵקִים ל-מֵקִים?", options: [{text:"זמן: עבר מול הווה", isCorrect:true}, {text:"בניין: הפעיל מול פיעל", isCorrect:false}, {text:"שניהם עבר", isCorrect:false}] },
+                    { difficulty: "hard", question: "עתיד נסתר ס-ו-ג בנפעל:", options: [{text:"יִסּוֹג", isCorrect:true, rationale:"דגש בפ'."}, {text:"יָסוּג", isCorrect:false}, {text:"יַסִּיג", isCorrect:false}] },
+                    { difficulty: "hard", question: "השורש של 'הֵבִין'?", options: [{text:"ב-י-נ", isCorrect:true}, {text:"ב-ו-נ", isCorrect:false}, {text:"ה-ב-נ", isCorrect:false}] },
+                    { difficulty: "hard", question: "איזו מילה היא מבניין 'התפולל'?", options: [{text:"מִתְלוֹצֵץ", isCorrect:true}, {text:"מִתְחַשֵּׁב", isCorrect:false}, {text:"מִתְנַגֵּד", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה השורש של הַשָּׂמָה (השמת עובדים)?", options: [{text:"ש-י-מ", isCorrect:true, rationale:"מלשון לשים, ש-י-מ. (ה-מ' של הפעיל נשארת)."}, {text:"ה-ש-מ", isCorrect:false}, {text:"ש-מ-מ", isCorrect:false}] },
+                    { difficulty: "hard", question: "הפועל מְעוֹדֵד, איזה בניין ושורש?", options: [{text:"ע-ו-ד, פולל", isCorrect:true}, {text:"ע-ד-ד, פיעל", isCorrect:false}, {text:"מ-ע-ד, פועל", isCorrect:false}] },
+                    { difficulty: "hard", question: "השורש ר-י-ב (או ר-ו-ב), מה שם הפעולה בקל?", options: [{text:"רִיב", isCorrect:true, rationale:"שם הפעולה הוא ריב, יוצא דופן."}, {text:"מְרִיבָה", isCorrect:false}, {text:"הֲרָבָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "איזו מילה היא בבניין הופעל?", options: [{text:"הוּקְמוּ", isCorrect:true, rationale:"ק-ו-ם."}, {text:"הוֹקִירוּ", isCorrect:false, rationale:"י-ק-ר (נפי/ו הפעיל)."}, {text:"הוֹדִיעוּ", isCorrect:false}] },
+                    { difficulty: "hard", question: "שורש המילה 'תְּהוּדָה'?", options: [{text:"ה-ו-ד", isCorrect:true, rationale:"מכאן הפועל להדהד."}, {text:"ה-ד-ה", isCorrect:false}, {text:"י-ה-ד", isCorrect:false}] }
                 ]
             },
             "npiv": {
                 id: "npiv", label: "נפי/ו", icon: "🔄", title: "גזרת נפי/ו (נחי פ' י/ו)",
-                intro: "גזרה של פעלים בהם פ' הפועל היא י' או ו'. בבגרויות, המוקד הוא בזיהוי הפיכת ה-י' ל-ו' בבניינים השונים.",
+                intro: "פעלים בהם פ' הפועל היא י' או ו'. ה-י' הופכת ל-ו' בבניינים מסוימים.",
                 concepts: [
-                    { title: "תופעת 'הוֹ' בהפעיל", content: "שורשים שמתחילים ב-י' ומוטים לבניין הפעיל מקבלים תחילית 'הוֹ'. ה-י' ההיסטורית הופכת ל-ו'. י-ר-ד -> הוֹרִיד. י-ל-ד -> הוֹלִיד." },
-                    { title: "תופעת 'נוֹ' בנפעל", content: "בבניין נפעל, זמן עבר והווה, התחילית המובהקת היא 'נוֹ'. י-צ-ר -> נוֹצַר. י-ס-ד -> נוֹסַד." },
-                    { title: "נפילת ה-י' בציווי קל", content: "בציווי בבניין קל, פ' הפועל (ה-י') פשוט נעלמת. י-ש-ב -> שֵׁב! י-ר-ד -> רֵד! י-ד-ע -> דַּע!" },
-                    { title: "חריגי ה-י' נשארת", content: "קיימים 7 שורשים בהם ה-י' לא הופכת ל-ו', אלא נשארת כ-י' בבניין הפעיל: י-ט-ב (הֵיטִיב), י-נ-ק (הֵינִיק), י-ל-ל (הֵילִיל), י-מ-ן (הֵימִין), י-ש-ר (הֵישִׁיר)." }
+                    { title: "תופעת 'הוֹ' בהפעיל", content: "י-ר-ד -> הוֹרִיד. י-ל-ד -> הוֹלִיד." },
+                    { title: "תופעת 'נוֹ' בנפעל", content: "התחילית המובהקת היא 'נוֹ'. נוֹצַר, נוֹסַד." },
+                    { title: "נפילת ה-י' בציווי קל", content: "בציווי קל ה-י' נעלמת. י-ש-ב -> שֵׁב!" },
+                    { title: "חריגי ה-י' נשארת", content: "שורשים כמו י-ט-ב ישארו עם י': הֵיטִיב, הֵינִיק." }
                 ],
                 conjugations: [
-                    { root: "י-ר-ד (קל)", past: "יָרַד", present: "יוֹרֵד", future: "יֵרֵד", infinitive: "לָרֶדֶת" },
+                    { root: "י-ר-ד", past: "יָרַד", present: "יוֹרֵד", future: "יֵרֵד", infinitive: "לָרֶדֶת" },
                     { root: "י-ס-פ (הפעיל)", past: "הוֹסִיף", present: "מוֹסִיף", future: "יוֹסִיף", infinitive: "לְהוֹסִיף" },
-                    { root: "י-ט-ב (הפעיל-חריג)", past: "הֵיטִיב", present: "מֵיטִיב", future: "יֵיטִיב", infinitive: "לְהֵיטִיב" }
+                    { root: "י-ט-ב (חריג)", past: "הֵיטִיב", present: "מֵיטִיב", future: "יֵיטִיב", infinitive: "לְהֵיטִיב" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "הפועל 'יָשַׁב' מתחיל באות י', אך מדוע הוא מוגדר כ'נח' (נפי/ו) ולא כשלם?", options: [{text:"משום שבהטיות מסוימות ה-י' נופלת או הופכת ל-ו' (כמו 'שֵׁב' או 'הוֹשִׁיב').", isCorrect:true, rationale:"גזרה מוגדרת לפי התנהגות השורש בהטיות השונות. אם הפ' נופלת או משתנה, זו גזרה."}, {text:"משום שה-י' אינה נשמעת כשאומרים 'ישב'.", isCorrect:false, rationale:"ה-י' נשמעת בבירור כמקור עיצורי בתחילת המילה."}, {text:"כי היא אחת מאותיות אית\"ן.", isCorrect:false, rationale:"היא אינה מוספית של עתיד כאן, אלא אות שורש מקורית."}] },
-                    { difficulty: "easy", question: "מה השורש של המילה 'נוֹצַר'?", options: [{text:"י-צ-ר", isCorrect:true, rationale:"תחילית 'נוֹ' מעידה על נפעל בגזרת נפי/ו. מחליפים את ה-ו' ב-י' ומקבלים י-צ-ר."}, {text:"נ-צ-ר", isCorrect:false, rationale:"אילו היה נ-צ-ר, בנפעל היינו רואים 'נִנְצַר'."}, {text:"ו-צ-ר", isCorrect:false, rationale:"השורשים המילוניים מתחילים תמיד ב-י'."}] },
-                    { difficulty: "easy", question: "מהו בניין הפועל 'מוֹבִיל'?", options: [{text:"הפעיל", isCorrect:true, rationale:"הקידומת 'מוֹ' היא צורת ההווה של בניין הפעיל בגזרת נפי/ו (עבר: הוֹבִיל)."}, {text:"נפעל", isCorrect:false, rationale:"בנפעל ההווה מתחיל ב'נוֹ' (נוֹלָד)."}, {text:"פועל", isCorrect:false, rationale:"בפועל התחילית היא 'מֻ' (מֻבָל)."}] },
-                    { difficulty: "medium", question: "מהי צורת העתיד, גוף 'היא', של השורש י-ר-ד בבניין קל?", options: [{text:"תֵּרֵד", isCorrect:true, rationale:"ה-י' השורשית נופלת, נשארת רק אות אית\"ן 'ת' מנוקדת בצירה."}, {text:"תֵּירֵד", isCorrect:false, rationale:"בעברית מודרנית/תקנית ה-י' של השורש נושרת כליל בכתיב ובהגייה."}, {text:"תּוֹרִיד", isCorrect:false, rationale:"זה בניין הפעיל."}] },
-                    { difficulty: "medium", question: "איזה מן הפעלים הבאים מציג את החריג שבו ה-י' נשארת בהפעיל?", options: [{text:"הֵינִיקָה", isCorrect:true, rationale:"שורש י-נ-ק. אחד מ-7 השורשים החריגים בהם ה-י' לא הופכת ל-ו' (הֵיטִיב, הֵינִיק)."}, {text:"הוֹלִידָה", isCorrect:false, rationale:"שורש י-ל-ד רגיל - ה-י' הפכה ל-ו'."}, {text:"הוֹבִילָה", isCorrect:false, rationale:"שורש י-ב-ל רגיל - ה-י' הפכה ל-ו'."}] },
-                    { difficulty: "medium", question: "כיצד תאמר בציווי פנייה לנקבה: '___ (י-צ-א) מן החדר!'?", options: [{text:"צְאִי", isCorrect:true, rationale:"פ' הפועל (י) נופלת, והאות צ' מקבלת שווא בשל הסיומת 'ִי'."}, {text:"תֵּצְאִי", isCorrect:false, rationale:"זו צורת עתיד, לא ציווי."}, {text:"יִצְאִי", isCorrect:false, rationale:"צורה שגויה, ה-י' השורשית חייבת ליפול בציווי קל."}] },
-                    { difficulty: "hard", question: "מה הבניין והשורש של המילה 'מוּבָל'?", options: [{text:"הופעל, י-ב-ל", isCorrect:true, rationale:"התחילית 'מוּ' מסמנת הווה של הופעל בנפי/ו. השורש המקורי: י-ב-ל."}, {text:"פועל, מ-ב-ל", isCorrect:false, rationale:"אם השורש היה מבל, היינו רואים דגש ב-ב'."}, {text:"הפעיל, י-ב-ל", isCorrect:false, rationale:"בהפעיל היינו רואים 'מוֹבִיל'."}] },
-                    { difficulty: "hard", question: "מה ההבדל בניתוח בין 'נוֹלַד' לבין 'נוֹפֵל'?", options: [{text:"נוֹלַד הוא בעבר (נפעל, י-ל-ד) ונוֹפֵל הוא בהווה (קל, נ-פ-ל)", isCorrect:true, rationale:"'נוֹלַד' מתחיל ב'נו' המציין עבר של נפעל בנפי/ו. 'נוֹפֵל' היא צורת הוֹוֶה של קל (שלמים/חפ\"נ)."}, {text:"שניהם בבניין נפעל, אך משורשים שונים", isCorrect:false, rationale:"'נופל' הוא בניין קל."}, {text:"אין הבדל, שניהם צורות הווה של נפי/ו", isCorrect:false, rationale:"'נופל' מגיע מחפ\"נ (נ-פ-ל) ואינו בבניין נפעל."}] },
-                    { difficulty: "hard", question: "מה שם הפועל של השורש י-כ-ל בבניין קל?", options: [{text:"לָכוֹל / לוּכַל", isCorrect:true, rationale:"זהו פועל חריג מאוד. שם הפועל התקני הוא 'לָכוֹל' או הצורה 'יוּכַל' שמתנהגת כמעט כמו הופעל מנוון."}, {text:"לִיכֹּל", isCorrect:false, rationale:"צורה לא קיימת."}, {text:"לְהָכִיל", isCorrect:false, rationale:"זה שם הפועל של הפעיל, שורש כ-ו-ל."}] },
-                    { difficulty: "hard", question: "מהי הדרך לזהות אם הפועל 'תּוֹשִׁיב' הוא בגוף 'אתה' (זכר) או 'היא' (נקבה)?", options: [{text:"אי אפשר לדעת מחוץ להקשר של משפט", isCorrect:true, rationale:"במרבית הגזרות ובנפי/ו בפרט, צורות עתיד 'אתה' ו'היא' זהות לחלוטין (תּוֹשִׁיב)."}, {text:"על פי הניקוד: תּוֹשֵׁב לזכר, תּוֹשִׁיב לנקבה", isCorrect:false, rationale:"אין הבדל בניקוד."}, {text:"צורת הנקבה תמיד מסתיימת ב-י'", isCorrect:false, rationale:"זה נכון ל'את' (נוכחת - תושיבי), אבל לא ל'היא' (נסתרת)."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "מדוע 'יָשַׁב' שייך לנפי/ו?", options: [{text:"כי בהטיות מסוימות ה-י' נופלת או הופכת לו'", isCorrect:true}, {text:"הי' לא נשמעת", isCorrect:false}, {text:"היא אות אית\"ן", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של 'נוֹצַר'?", options: [{text:"י-צ-ר", isCorrect:true}, {text:"נ-צ-ר", isCorrect:false}, {text:"ו-צ-ר", isCorrect:false}] },
+                    { difficulty: "easy", question: "הבניין של 'מוֹבִיל'?", options: [{text:"הפעיל", isCorrect:true}, {text:"נפעל", isCorrect:false}, {text:"פועל", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזה פועל בנפי/ו?", options: [{text:"נוֹלָד", isCorrect:true}, {text:"נוֹפֵל", isCorrect:false}, {text:"נוֹהֵג", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של הוֹסִיף?", options: [{text:"י-ס-פ", isCorrect:true}, {text:"ו-ס-פ", isCorrect:false}, {text:"ה-ס-פ", isCorrect:false}] },
+                    { difficulty: "easy", question: "שם הפועל של י-ד-ע (קל):", options: [{text:"לָדַעַת", isCorrect:true}, {text:"לִידֹעַ", isCorrect:false}, {text:"לְהוֹדִיעַ", isCorrect:false}] },
+                    { difficulty: "easy", question: "ציווי מ-י-צ-א (אתה):", options: [{text:"צֵא", isCorrect:true}, {text:"יְצֵא", isCorrect:false}, {text:"תֵּצֵא", isCorrect:false}] },
+                    { difficulty: "easy", question: "השלם: הילד ___ אתמול. (י-ל-ד בנפעל)", options: [{text:"נוֹלַד", isCorrect:true}, {text:"נִילַד", isCorrect:false}, {text:"הוֹלִיד", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה האות שהוחלפה ב-ו' במילה 'מוֹרִיד'?", options: [{text:"האות י' השורשית", isCorrect:true}, {text:"האות ה' של הפעיל", isCorrect:false}, {text:"אף אחת", isCorrect:false}] },
+                    { difficulty: "easy", question: "איך אומרים בעתיד (הוא) י-ר-ד (קל)?", options: [{text:"יֵרֵד", isCorrect:true}, {text:"יִירַד", isCorrect:false}, {text:"יִרֶד", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "עתיד 'היא', י-ר-ד בקל:", options: [{text:"תֵּרֵד", isCorrect:true}, {text:"תֵּירֵד", isCorrect:false}, {text:"תּוֹרִיד", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזה פועל מציג י' שנשארת בהפעיל?", options: [{text:"הֵינִיקָה", isCorrect:true}, {text:"הוֹלִידָה", isCorrect:false}, {text:"הוֹבִילָה", isCorrect:false}] },
+                    { difficulty: "medium", question: "ציווי לנקבה: י-צ-א!", options: [{text:"צְאִי", isCorrect:true}, {text:"תֵּצְאִי", isCorrect:false}, {text:"יִצְאִי", isCorrect:false}] },
+                    { difficulty: "medium", question: "שם הפועל של הוֹשִׁיב?", options: [{text:"לְהוֹשִׁיב", isCorrect:true}, {text:"לָשֶׁבֶת", isCorrect:false}, {text:"לְיַשֵּׁב", isCorrect:false}] },
+                    { difficulty: "medium", question: "שורש 'מֵיטִיב':", options: [{text:"י-ט-ב", isCorrect:true}, {text:"ט-ו-ב", isCorrect:false}, {text:"מ-ט-ב", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה הבניין של נוֹעַדְנוּ?", options: [{text:"נפעל", isCorrect:true}, {text:"קל", isCorrect:false}, {text:"הפעיל", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזו מילה משורש י-ש-ב?", options: [{text:"מוֹשָׁב", isCorrect:true, rationale:"משקל מַקְטָל"}, {text:"הֲשָׁבָה", isCorrect:false}, {text:"מְשִיבָה", isCorrect:false}] },
+                    { difficulty: "medium", question: "מה קורה לי' בעתיד נפעל (יִוָּלֵד)?", options: [{text:"היא הופכת לו' עם דגש", isCorrect:true}, {text:"היא נופלת לגמרי", isCorrect:false}, {text:"היא נשארת כי'", isCorrect:false}] },
+                    { difficulty: "medium", question: "הפועל מוֹרִידִים באיזה זמן?", options: [{text:"הווה (בינוני)", isCorrect:true}, {text:"עבר", isCorrect:false}, {text:"עתיד", isCorrect:false}] },
+                    { difficulty: "medium", question: "שם הפעולה של הוֹדִיעַ?", options: [{text:"הוֹדָעָה", isCorrect:true}, {text:"יְדִיעָה", isCorrect:false}, {text:"מֵידָע", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "בניין ושורש של 'מוּבָל'?", options: [{text:"הופעל, י-ב-ל", isCorrect:true}, {text:"פועל, מ-ב-ל", isCorrect:false}, {text:"הפעיל, י-ב-ל", isCorrect:false}] },
+                    { difficulty: "hard", question: "הבדל בין 'נוֹלַד' ל'נוֹפֵל'?", options: [{text:"עבר נפעל (י-ל-ד) מול הווה קל (נ-פ-ל)", isCorrect:true}, {text:"שניהם נפעל משרשים שונים", isCorrect:false}, {text:"אין הבדל", isCorrect:false}] },
+                    { difficulty: "hard", question: "שם הפועל של י-כ-ל בבניין קל?", options: [{text:"לָכוֹל / לוּכַל", isCorrect:true}, {text:"לִיכֹּל", isCorrect:false}, {text:"לְהָכִיל", isCorrect:false}] },
+                    { difficulty: "hard", question: "תּוֹשִׁיב - זכר או נקבה?", options: [{text:"אי אפשר לדעת מחוץ להקשר (אתה/היא)", isCorrect:true}, {text:"תושב לזכר", isCorrect:false}, {text:"רק נקבה", isCorrect:false}] },
+                    { difficulty: "hard", question: "הופעל עבר שורש י-ר-ד?", options: [{text:"הוּרַד", isCorrect:true}, {text:"הוֹרַד", isCorrect:false}, {text:"הוּרִיד", isCorrect:false}] },
+                    { difficulty: "hard", question: "באיזה פועל ה-י' הופכת ל-ו' דגושה?", options: [{text:"יִוָּסֵד", isCorrect:true, rationale:"עתיד נפעל."}, {text:"הוֹסִיף", isCorrect:false}, {text:"מוֹרִיד", isCorrect:false}] },
+                    { difficulty: "hard", question: "צורת העתיד המדויקת של 'יָשֵׁן' (אתה):", options: [{text:"תִּישַׁן", isCorrect:true, rationale:"פועל יוצא דופן שלמרות ה-י' אינו נפי/ו רגיל, הוא שומר על י' חיריק מלא."}, {text:"תִּישֵׁן", isCorrect:false}, {text:"תּוֹשֵׁן", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה השורש של הַלְוָאָה?", options: [{text:"ל-ו-ה", isCorrect:true, rationale:"הפעיל של נל\"י/ה, ה-ו' עיצורית. זו לא גזרת נפי/ו כלל. שאלת מכשול!"}, {text:"י-ל-ו", isCorrect:false}, {text:"ו-ל-ו", isCorrect:false}] },
+                    { difficulty: "hard", question: "איזו מילה משורש י-ס-ד בבניין פועל?", options: [{text:"מְיֻסָּד", isCorrect:true, rationale:"בפיעל ופועל הי' נשארת (מְיַסֵּד, מְיֻסָּד)."}, {text:"מוּסָד", isCorrect:false, rationale:"הופעל"}, {text:"מִיסוּד", isCorrect:false}] },
+                    { difficulty: "hard", question: "השורש י-ע-ד, התפעל הווה רבים:", options: [{text:"מִתְיַעֲדִים", isCorrect:true, rationale:"הי' נשמרת ונהגית בעיצוריות."}, {text:"מִתְוַעֲדִים", isCorrect:false, rationale:"זו צורה לשורש י-ע-ד אבל בנפעל או חריגים. התקני פה לי-ע-ד מתיעדים או שזה מתועדים מהפעיל."}, {text:"מוֹעֲדִים", isCorrect:false}] }
                 ]
             },
             "hpn": {
                 id: "hpn", label: "חפ\"נ", icon: "✂️", title: "חפ\"נ (חסרי פ' נ')",
-                intro: "גזרה המתאפיינת בנפילת האות הראשונה של השורש (נ') והופעת דגש חזק המפצה על היעדרה. גזרה טריקית מאוד במבחנים.",
+                intro: "גזרה בה האות הראשונה של השורש (נ') נופלת ומופיע דגש משלים.",
                 concepts: [
-                    { title: "מנגנון הפיצוי (דגש משלים)", content: "כשהאות נ' (פ' הפועל) נבלעת, האות שאחריה נדגשת בדגש חזק. יִנְפֹּל -> יִפֹּל (דגש ב-פ'). הִנְצִיל -> הִצִּיל (דגש ב-צ')." },
-                    { title: "איפה ה-נ' נופלת?", content: "בבניין קל: בעתיד, ציווי ושם פועל. בבניינים נפעל, הפעיל והופעל: ה-נ' נופלת תמיד כאשר יש תחילית לפני השורש." },
-                    { title: "מציאת השורש מתוך הדגש", content: "זיהיתם תחילית (מ', ה', י') ולאחריה דגש חזק באות השנייה של השורש הנראה לעין? כנראה שחסרה נ' בהתחלה! מַכִּיר -> יש דגש ב-כ'. נוסיף נ' ונקבל נ-כ-ר." },
-                    { title: "שורש הלקח - החריג המושלם", content: "הפועל יִקַּח (שורש ל-ק-ח) אינו חפ\"נ אלא חפ\"ל! האות שנופלת בו היא ל' ולא נ'. עם זאת, הוא מתנהג בדיוק לפי כללי חפ\"נ." }
+                    { title: "דגש משלים", content: "ה-נ' נבלעת, האות שאחריה נדגשת: יִ(נ)פֹּל -> יִפֹּל." },
+                    { title: "מתי נופלת?", content: "עתיד קל, ציווי ושם פועל קל. בהפעיל, הופעל ונפעל." },
+                    { title: "זיהוי", content: "תחילית (מ/ה/י) + דגש חזק באות השנייה של השורש הגלוי (מַכִּיר -> נ-כ-ר)." },
+                    { title: "שורש הלקח", content: "יִקַּח (ל-ק-ח) - חפ\"ל שמתנהג כחפ\"נ." }
                 ],
                 conjugations: [
-                    { root: "נ-פ-ל (קל)", past: "נָפַל", present: "נוֹפֵל", future: "יִפֹּל", infinitive: "לִנְפֹּל" },
+                    { root: "נ-פ-ל", past: "נָפַל", present: "נוֹפֵל", future: "יִפֹּל", infinitive: "לִנְפֹּל" },
                     { root: "נ-צ-ל (הפעיל)", past: "הִצִּיל", present: "מַצִּיל", future: "יַצִּיל", infinitive: "לְהַצִּיל" },
-                    { root: "ל-ק-ח (קל-חריג)", past: "לָקַח", present: "לוֹקֵחַ", future: "יִקַּח", infinitive: "לָקַחַת" }
+                    { root: "ל-ק-ח (חריג)", past: "לָקַח", present: "לוֹקֵחַ", future: "יִקַּח", infinitive: "לָקַחַת" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "בפועל 'הִצִּיל' מופיע דגש חזק באות צ'. מה תפקידו?", options: [{text:"להשלים את האות נ' שנפלה (דגש חזק משלים)", isCorrect:true, rationale:"הדגש מראה שהייתה שם אות נ' (הנציל) שנבלעה לתוך ה-צ'."}, {text:"הוא חלק מתבנית הבניין (דגש חזק תבניתי)", isCorrect:false, rationale:"הבניין הוא הפעיל, ואין בו דגש תבניתי כמו בפיעל."}, {text:"הוא מציין שהפועל נהגה בהטעמה מלרע", isCorrect:false, rationale:"דגש אינו קשור ישירות למקום ההטעמה במילה."}] },
-                    { difficulty: "easy", question: "מה השורש של הפועל <b>נָגַשׁ</b>?", options: [{text:"נ-ג-ש", isCorrect:true, rationale:"צורת עבר נסתר (קל) מראה את מלוא השורש: נ-ג-ש."}, {text:"ג-ו-ש", isCorrect:false, rationale:"לו זה היה ג-ו-ש, הפועל בעבר היה גָּשׁ."}, {text:"ג-ש-ש", isCorrect:false, rationale:"אין כפילות של האות ג' בעבר."}] },
-                    { difficulty: "easy", question: "איך נאמר 'אני אֶסַּע' מחר?", options: [{text:"אֶסַּע (עם דגש ב-ס')", isCorrect:true, rationale:"עתיד של נ-ס-ע בבניין קל. ה-נ' נופלת וה-ס' מודגשת."}, {text:"אֶנְסַע", isCorrect:false, rationale:"ה-נ' חייבת ליפול בפועל זה."}, {text:"יִסַּע", isCorrect:false, rationale:"זו צורת 'הוא' ולא 'אני'."}] },
-                    { difficulty: "medium", question: "לפניך הפועל 'מַגִּישׁ'. כיצד תסביר את התצורה שלו?", options: [{text:"בניין הפעיל, זמן הווה, שורש נ-ג-ש", isCorrect:true, rationale:"תחילית מ' פתוחה מציינת הווה הפעיל. הדגש ב-ג' מעיד על ה-נ' שנפלה."}, {text:"בניין פיעל, זמן הווה, שורש נ-ג-ש", isCorrect:false, rationale:"בפיעל היינו רואים מְנַגֵּשׁ."}, {text:"בניין הפעיל, זמן הווה, שורש ג-ו-ש", isCorrect:false, rationale:"מג-ו-ש מתקבל בהפעיל הפועל מֵגִישׁ (בלי דגש)."}] },
-                    { difficulty: "medium", question: "מה שם הפועל התקני של השורש נ-ג-ש בבניין קל?", options: [{text:"לָגֶשֶׁת", isCorrect:true, rationale:"שם הפועל בבניין קל מחסיר את ה-נ' הראשונה ומקבל ת' בסוף לציון ה'חסר'."}, {text:"לִנְגֹּשׁ", isCorrect:false, rationale:"צורה זו נדירה ולא שמישה בפועל זה בעברית תקנית."}, {text:"לְהַגִּישׁ", isCorrect:false, rationale:"זה שם הפועל בבניין הפעיל."}] },
-                    { difficulty: "medium", question: "איזה מהפעלים הבאים הוא פועל חריג של גזרת חפ\"ל (חסר פ' ל') שמתנהג כמו חפ\"נ?", options: [{text:"יִקַּח", isCorrect:true, rationale:"השורש הוא ל-ק-ח. ה-ל' נופלת בעתיד (יקח) כמו ה-נ' בחפ\"נ. זהו שורש מיוחד במינו."}, {text:"יִשַּׁךְ", isCorrect:false, rationale:"שורש נ-ש-כ, זהו חפ\"נ רגיל."}, {text:"יִפֹּל", isCorrect:false, rationale:"שורש נ-פ-ל, חפ\"נ קלאסי."}] },
-                    { difficulty: "hard", question: "מה השורש של הפועל 'מַבִּיט' ומה השורש של 'מַבִּיעַ'?", options: [{text:"מביט = נ-ב-ט, מביע = נ-ב-ע", isCorrect:true, rationale:"בשני המקרים ה-מ' היא תחילית של הווה הפעיל, ויש דגש באות השנייה המעיד על נ' חסרה."}, {text:"שניהם מהשורש ב-ו-ט ו-ב-ו-ע בהתאמה", isCorrect:false, rationale:"אם אלו היו נעו\"י, היינו רואים 'מֵבִיט' ו'מֵבִיעַ' בלא דגש."}, {text:"מביט = מ-ב-ט, מביע = מ-ב-ע", isCorrect:false, rationale:"המ' אינה חלק משורש, אלא מוספית של הווה הפעיל."}] },
-                    { difficulty: "hard", question: "הפועל 'הֻפַּל' מצוי בבניין הופעל. איזו תופעה פונטית התרחשה בו?", options: [{text:"הידמות מלאה של פ' הפועל ולאחריה התלכדות עיצורים", isCorrect:true, rationale:"ה-נ' של נ-פ-ל הידמתה ל-פ' (הופפל) והן התלכדו ל-פ' אחת דגושה (הופּל). זו ההגדרה המדעית לנפילת ה-נ'."}, {text:"השמטה של אות אית\"ן", isCorrect:false, rationale:"אף אות אית\"ן לא הושמטה פה, זה זמן עבר."}, {text:"חטיפת תנועה והידמות חלקית", isCorrect:false, rationale:"לא התרחשה חטיפה, ה-נ' היא עיצור שהידמה לחלוטין."}] },
-                    { difficulty: "hard", question: "מהי צורת העתיד (הוא) של השורש נ-ת-נ בבניין קל, ומה מיוחד בה?", options: [{text:"יִתֵּן - חסרה בה גם הפ' (נ) וגם הל' (נ)", isCorrect:true, rationale:"הפועל הוא חפ\"נ שגם מאבד את ה-נ' האחרונה לפני סיומות. בעתיד: י(נ)ת(נ) -> יתן."}, {text:"יִנְתֹּן - לא חלה בה נפילת ה-נ'", isCorrect:false, rationale:"צורה שגויה לחלוטין בעברית."}, {text:"יַתִּין - היא מתנהגת כמו נפי/ו", isCorrect:false, rationale:"שורש נתנ הוא חפ\"נ, ולא שייך לנפי/ו."}] },
-                    { difficulty: "hard", question: "מה השורש והבניין של שם העצם 'מַצֶּבֶת'?", options: [{text:"שורש י-צ-ב, משקל מַקְטֶלֶת (חריג נפי/ו שמתנהג כחפ\"נ)", isCorrect:true, rationale:"טריק של בגרות! השורש הוא י-צ-ב, אך הוא מתנהג כחפ\"נ (הציב, מצבה). לכן הדגש ב-צ'."}, {text:"שורש נ-צ-ב, משקל מַקְטֶלֶת", isCorrect:false, rationale:"אמנם יש דגש של חפ\"נ, אך המילון מגדיר את השורש כי-צ-ב (כמו יציב, התייצב)."}, {text:"שורש צ-ב-ב, משקל מַפְעֶלֶת", isCorrect:false, rationale:"שורשים כפולים (צ-ב-ב) לא מייצרים דגש באות הראשונה שלהם."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "תפקיד הדגש ב'הִצִּיל':", options: [{text:"דגש משלים ל-נ' שנפלה", isCorrect:true}, {text:"דגש תבניתי", isCorrect:false}, {text:"מציין מלרע", isCorrect:false}] },
+                    { difficulty: "easy", question: "השורש של נָגַשׁ:", options: [{text:"נ-ג-ש", isCorrect:true}, {text:"ג-ו-ש", isCorrect:false}, {text:"ג-ש-ש", isCorrect:false}] },
+                    { difficulty: "easy", question: "אני מחר (נ-ס-ע):", options: [{text:"אֶסַּע", isCorrect:true}, {text:"אֶנְסַע", isCorrect:false}, {text:"יִסַּע", isCorrect:false}] },
+                    { difficulty: "easy", question: "השורש של מַבִּיט:", options: [{text:"נ-ב-ט", isCorrect:true}, {text:"מ-ב-ט", isCorrect:false}, {text:"ב-ו-ט", isCorrect:false}] },
+                    { difficulty: "easy", question: "שם פועל של נ-ת-נ בקל:", options: [{text:"לָתֵת", isCorrect:true}, {text:"לִנְתֹּן", isCorrect:false}, {text:"לְהַתִּין", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזה פועל חפ\"נ?", options: [{text:"יִגַּשׁ", isCorrect:true}, {text:"יָקוּם", isCorrect:false}, {text:"יִשְׁמֹר", isCorrect:false}] },
+                    { difficulty: "easy", question: "מה השורש של הִפִּיל?", options: [{text:"נ-פ-ל", isCorrect:true}, {text:"פ-י-ל", isCorrect:false}, {text:"ה-פ-ל", isCorrect:false}] },
+                    { difficulty: "easy", question: "השלם: הילד ___ את הכדור. (הפעיל, נ-ג-ע)", options: [{text:"הִגִּיעַ", isCorrect:true}, {text:"הִנְגִּיעַ", isCorrect:false}, {text:"נָגַע", isCorrect:false}] },
+                    { difficulty: "easy", question: "צורת העתיד (אתה) מנ-ג-נ בקל:", options: [{text:"תִּנְגַּן / אין בקל", isCorrect:true, rationale:"נגן קיים בעיקר בפיעל - מְנַגֵּן."}, {text:"תִּגַּן", isCorrect:false}, {text:"תִּיגַּן", isCorrect:false}] },
+                    { difficulty: "easy", question: "השורש של מַסִּיעַ:", options: [{text:"נ-ס-ע", isCorrect:true}, {text:"ס-ו-ע", isCorrect:false}, {text:"מ-ס-ע", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "הסבר לתצורה של מַגִּישׁ:", options: [{text:"הפעיל, הווה, נ-ג-ש", isCorrect:true}, {text:"פיעל, הווה, נ-ג-ש", isCorrect:false}, {text:"הפעיל, הווה, ג-ו-ש", isCorrect:false}] },
+                    { difficulty: "medium", question: "שם הפועל נ-ג-ש בקל:", options: [{text:"לָגֶשֶׁת", isCorrect:true}, {text:"לִנְגֹּשׁ", isCorrect:false}, {text:"לְהַגִּישׁ", isCorrect:false}] },
+                    { difficulty: "medium", question: "חריג חפ\"ל שמתנהג כחפ\"נ:", options: [{text:"יִקַּח", isCorrect:true}, {text:"יִשַּׁךְ", isCorrect:false}, {text:"יִפֹּל", isCorrect:false}] },
+                    { difficulty: "medium", question: "ציווי נ-ג-ע בקל:", options: [{text:"גַּע", isCorrect:true}, {text:"נְגַע", isCorrect:false}, {text:"הִגַּע", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזו תופעה יש בפועל 'יִטַּע' (ישתול)?", options: [{text:"חפ\"נ בנ-ט-ע", isCorrect:true}, {text:"חפ\"ל בל-ק-ח", isCorrect:false}, {text:"נעו\"י", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזו מילה אינה שייכת?", options: [{text:"מַשִּׁיק", isCorrect:true, rationale:"משורש נ-ש-ק (חפ\"נ)."}, {text:"מֵשִׁיב", isCorrect:false, rationale:"נעו\"י"}, {text:"מֵקִים", isCorrect:false}] },
+                    { difficulty: "medium", question: "שורש נ-צ-ל בבניין התפעל:", options: [{text:"מִתְנַצֵּל", isCorrect:true, rationale:"הנ' אינה נופלת בהתפעל."}, {text:"מִתְצַּל", isCorrect:false}, {text:"מִנָּצֵל", isCorrect:false}] },
+                    { difficulty: "medium", question: "צורת הנסתרות (הן) בעבר לנ-פ-ל (קל):", options: [{text:"נָפְלוּ", isCorrect:true}, {text:"נִפְלוּ", isCorrect:false}, {text:"הִפִּילוּ", isCorrect:false}] },
+                    { difficulty: "medium", question: "איזה דגש יש באות ט' במילה מַבָּט?", options: [{text:"אין דגש ב-ט', יש ב-ב'", isCorrect:true}, {text:"משלים", isCorrect:false}, {text:"תבניתי", isCorrect:false}] },
+                    { difficulty: "medium", question: "השורש נ-ז-ק בבניין נפעל עבר:", options: [{text:"נִזַּק", isCorrect:true, rationale:"הנ' של הבניין מתלכדת עם הנ' של השורש."}, {text:"נוֹזַק", isCorrect:false}, {text:"נִנְזַק", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "שורש מַבִּיט ומַבִּיעַ:", options: [{text:"נ-ב-ט, נ-ב-ע", isCorrect:true}, {text:"ב-ו-ט, ב-ו-ע", isCorrect:false}, {text:"מ-ב-ט, מ-ב-ע", isCorrect:false}] },
+                    { difficulty: "hard", question: "הופעל של נ-פ-ל (הֻפַּל) - איזו תופעה?", options: [{text:"הידמות מלאה והתלכדות", isCorrect:true}, {text:"השמטת אית\"ן", isCorrect:false}, {text:"חטיפת תנועה", isCorrect:false}] },
+                    { difficulty: "hard", question: "עתיד קל של נ-ת-נ:", options: [{text:"יִתֵּן (חסרות 2 נ')", isCorrect:true}, {text:"יִנְתֹּן", isCorrect:false}, {text:"יַתִּין", isCorrect:false}] },
+                    { difficulty: "hard", question: "שם עצם 'מַצֶּבֶת' (שורש ובניין):", options: [{text:"י-צ-ב, מתנהג כחפ\"נ", isCorrect:true}, {text:"נ-צ-ב", isCorrect:false}, {text:"צ-ב-ב", isCorrect:false}] },
+                    { difficulty: "hard", question: "האם הִסִּיעַ חפ\"נ?", options: [{text:"כן, נ-ס-ע", isCorrect:true}, {text:"לא, ס-ו-ע", isCorrect:false}, {text:"לא, י-ס-ע", isCorrect:false}] },
+                    { difficulty: "hard", question: "באיזו מהמילים חסרה האות הראשונה של השורש?", options: [{text:"מוּבָן", isCorrect:false, rationale:"השורש ב-י-נ."}, {text:"מַכָּה", isCorrect:true, rationale:"שורש נ-כ-ה, חפ\"נ + נל\"י/ה."}, {text:"מַבְרִיק", isCorrect:false}] },
+                    { difficulty: "hard", question: "צורת העתיד המדויקת של נ-ז-ל בקל (הוא):", options: [{text:"יִזַּל", isCorrect:true, rationale:"הנ' נופלת ויש דגש ב-ז'."}, {text:"יִנְזֹל", isCorrect:false, rationale:"צורת נדירה יותר."}, {text:"יַזִּיל", isCorrect:false, rationale:"הפעיל"}] },
+                    { difficulty: "hard", question: "הפועל תַּבִּיעוּ – מה השורש והזמן?", options: [{text:"נ-ב-ע, עתיד נוכחים", isCorrect:true}, {text:"ב-ו-ע, הווה", isCorrect:false}, {text:"נ-ב-ע, ציווי", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה השורש של מַגֶּבֶת?", options: [{text:"נ-ג-ב", isCorrect:true}, {text:"ג-ו-ב", isCorrect:false}, {text:"מ-ג-ב", isCorrect:false}] },
+                    { difficulty: "hard", question: "מה ההבדל בין יִנְקֹם ל-יִקֹּם?", options: [{text:"יקום זו הצורה לאחר נפילת הנון, ינקום זו הצורה ללא נפילה (שתיהן חוקיות)", isCorrect:true, rationale:"בשורש זה ניתן לומר גם ינקום וגם יקום."}, {text:"יקום זה קל וינקום זה נפעל", isCorrect:false}, {text:"אין הבדל משמעותי, זו שגיאת כתיב", isCorrect:false}] }
                 ]
             },
             "numbers": {
                 id: "numbers", label: "שם המספר", icon: "🔢", title: "שם המספר ואותיות יחס",
-                intro: "חוקי ההתאמה של מספרים לעצמים. נושא שמפיל רבים בבגרות עקב חוקי הזכר/נקבה ההפוכים וצורות הנסמך.",
+                intro: "חוקי ההתאמה של מספרים לעצמים. זכרו: ב-3-10 יש חוקיות הפוכה (סיומת ה' לזכר).",
                 concepts: [
-                    { title: "כלל הבסיס ההפוך (3-10)", content: "במספרים 3 עד 10, המספר מקבל סיומת 'ה' כאשר הוא סופר **זכר**. לדוגמה: שלושה בנים (זכר), שלוש בנות (נקבה)." },
-                    { title: "המספרים 1 ו-2", content: "מתנהגים כמו תואר רגיל, תואמים למין ובאים **אחרי** השם: ילד אחד, ילדה אחת, שני ילדים, שתי ילדות." },
-                    { title: "גיל, תאריך ושנה", content: "תאריכים נאמרים ב**זכר** (בחמישה במרץ). גיל נאמר ב**נקבה** (בן שמונה). שנה נאמרת ב**נקבה** (שנת אלפיים ושתיים)." },
-                    { title: "צורת הנסמך", content: "כשהמספר צמוד למיודע (ה- הידיעה), משתמשים בנסמך: שְׁלוֹשֶׁת הילדים (זכר נסמך: סיומת -ת), שְׁלוֹשׁ הילדות (נקבה נסמך: סיומת חסרה)." }
+                    { title: "כלל הבסיס ההפוך (3-10)", content: "המספר מקבל ה' כשהוא סופר **זכר**. (שלושה בנים, שלוש בנות)." },
+                    { title: "המספרים 1 ו-2", content: "תואמים למין ובאים אחרי השם: ילד אחד, ילדה אחת." },
+                    { title: "גיל, תאריך ושנה", content: "תאריכים בזכר, גיל ושנה בנקבה." },
+                    { title: "צורת הנסמך", content: "למיודע: שְׁלוֹשֶׁת הילדים (זכר), שְׁלוֹשׁ הילדות (נקבה)." }
                 ],
                 conjugations: [
-                    { root: "3", past: "שְׁלוֹשָׁה (ז')", present: "שָׁלוֹשׁ (נ')", future: "שְׁלוֹשֶׁת (נסמך ז')", infinitive: "שְׁלוֹשׁ (נסמך נ')" },
-                    { root: "10", past: "עֲשָׂרָה (ז')", present: "עֶשֶׂר (נ')", future: "עֲשֶׂרֶת (נסמך ז')", infinitive: "עֶשֶׂר (נסמך נ')" }
+                    { root: "3", past: "שְׁלוֹשָׁה (ז')", present: "שָׁלוֹשׁ (נ')", future: "שְׁלוֹשֶׁת (ז' נסמך)", infinitive: "שְׁלוֹשׁ (נ' נסמך)" },
+                    { root: "10", past: "עֲשָׂרָה (ז')", present: "עֶשֶׂר (נ')", future: "עֲשֶׂרֶת (ז' נסמך)", infinitive: "עֶשֶׂר (נ' נסמך)" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "בכיתה יש 3 לוחות. כיצד נהגה המספר?", options: [{text:"שְׁלוֹשָׁה לוחות", isCorrect:true, rationale:"'לוח' הוא זכר (לוח חדש, למרות צורת הרבים 'ות'). לכן המספר חייב להיות בזכר - שלושה."}, {text:"שָׁלוֹשׁ לוחות", isCorrect:false, rationale:"המספר בנקבה, בעוד לוח הוא זכר."}, {text:"שְׁלָשׁוֹת לוחות", isCorrect:false, rationale:"צורה לא תקנית למספר רגיל."}] },
-                    { difficulty: "easy", question: "האירוע יתקיים ב-14 באפריל. כיצד ייאמר התאריך?", options: [{text:"בְּאַרְבָּעָה עָשָׂר באפריל", isCorrect:true, rationale:"תאריכים בחודש תמיד נאמרים בלשון זכר."}, {text:"בְּאַרְבַּע עֶשְׂרֵה באפריל", isCorrect:false, rationale:"זו צורת נקבה, תאריך הוא תמיד בזכר (ימים)."}, {text:"בְּאַרְבָּעָה עֶשְׂרֵה באפריל", isCorrect:false, rationale:"שילוב שגוי של זכר (ארבעה) ונקבה (עשרה)."}] },
-                    { difficulty: "easy", question: "איך נכון לכתוב: יש לי ___ חברות?", options: [{text:"שְׁתֵּי חברות", isCorrect:true, rationale:"חברות זה נקבה, המספר שתיים/שתי הוא לנקבה."}, {text:"שְׁנֵי חברות", isCorrect:false, rationale:"שני/שניים זה לזכר."}, {text:"שְׁתַּיִם חברות", isCorrect:false, rationale:"שתיים זה מוחלט, כאן נדרש נסמך (שתי חברות)."}] },
-                    { difficulty: "medium", question: "כיצד נאמר את המספר במשפט: 'קניתי 17 חולצות'?", options: [{text:"שְׁבַע עֶשְׂרֵה חולצות", isCorrect:true, rationale:"חולצה היא נקבה. לכן נאמר 'שבע' (בלי ה') ו'עשרה' (סיומת נקבה)."}, {text:"שִׁבְעָה עָשָׂר חולצות", isCorrect:false, rationale:"זה זכר. חולצה היא נקבה."}, {text:"שִׁבְעַת עָשָׂר חולצות", isCorrect:false, rationale:"צורה שגויה."}] },
-                    { difficulty: "medium", question: "איזו צורה היא הנכונה ביותר: ___ התלמידים הגיעו?", options: [{text:"שְׁמוֹנַת התלמידים", isCorrect:true, rationale:"תלמידים הם זכר. המילה מיודעת (ה-תלמידים), לכן יש להשתמש בצורת נסמך זכר של 8, שהיא שמונַת."}, {text:"שְׁמוֹנָה התלמידים", isCorrect:false, rationale:"שמונה היא הצורה המוחלטת, לא נסמך."}, {text:"שְׁמוֹנֶה התלמידים", isCorrect:false, rationale:"שמונה היא נקבה, תלמידים הם זכר."}] },
-                    { difficulty: "medium", question: "השלם: התכנית היא 'פי 4' יותר יקרה.", options: [{text:"פי אַרְבָּעָה", isCorrect:true, rationale:"אחרי המילה 'פי' (שמציינת מכפלה) תמיד משתמשים במספר זכר מוחלט."}, {text:"פי אַרְבַּע", isCorrect:false, rationale:"ארבע היא צורת נקבה."}, {text:"פי רְבִיעִי", isCorrect:false, rationale:"זהו מספר סידורי."}] },
-                    { difficulty: "hard", question: "איך אומרים בעברית את שנת 2005?", options: [{text:"שנת אַלְפַּיִם וְחָמֵשׁ", isCorrect:true, rationale:"שנים מציינים בנקבה (שנת... עברה). 5 בנקבה זה חָמֵשׁ."}, {text:"שנת אַלְפַּיִם וַחֲמִשָּׁה", isCorrect:false, rationale:"חמישה זה זכר."}, {text:"שנת שְׁנֵי אֲלָפִים וְחָמֵשׁ", isCorrect:false, rationale:"'שני אלפים' לא נאמר כך אלא 'אלפיים'."}] },
-                    { difficulty: "hard", question: "כיצד תקרא את המספר '3000'?", options: [{text:"שְׁלֹשֶׁת אֲלָפִים", isCorrect:true, rationale:"אלף הוא זכר. כדי לומר מ-3 עד 10 אלפים משתמשים בנסמך זכר (שלושת, ארבעת) + אלפים."}, {text:"שְׁלוֹשָׁה אֲלָפִים", isCorrect:false, rationale:"יש צורך בנסמך כי אלפים זו המילה הנספרת (שלושת ה...)."}, {text:"שְׁלוֹשׁ אֲלָפִים", isCorrect:false, rationale:"שלוש זה נסמך נקבה."}] },
-                    { difficulty: "hard", question: "קרא את המשפט: 'המרתון נערך בקו ___'. כיצד נהגה המספר 7?", options: [{text:"קו שֶׁבַע", isCorrect:true, rationale:"'מספר סתמי' – כלומר מספר המציין זיהוי של חפץ (קו אוטובוס, חדר, עמוד) ייאמר תמיד בנקבה."}, {text:"קו שִׁבְעָה", isCorrect:false, rationale:"למרות ש'קו' הוא זכר, הכלל של 'מספר סתמי' גובר ודורש נקבה."}, {text:"קו הַשְּׁבִיעִי", isCorrect:false, rationale:"זהו מספר סידורי."}] },
-                    { difficulty: "hard", question: "השלם: השולחן מיועד ל-___ סועדים.", options: [{text:"שְׁנֵים עָשָׂר", isCorrect:true, rationale:"'סועדים' הם זכר. המספר 12 לזכר מורכב מ'שנים' (נסמך זכר) ו'עשר' (זכר) = שנים עשר."}, {text:"שְׁתֵּים עֶשְׂרֵה", isCorrect:false, rationale:"זו צורה לנקבה."}, {text:"שְׁנֵי עֲשָׂרָה", isCorrect:false, rationale:"במספרים 11-19 המילה עשר מאבדת את ה' בזכר (עשר במקום עשרה)."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "בכיתה יש 3 לוחות:", options: [{text:"שְׁלוֹשָׁה לוחות", isCorrect:true}, {text:"שָׁלוֹשׁ לוחות", isCorrect:false}, {text:"שְׁלָשׁוֹת לוחות", isCorrect:false}] },
+                    { difficulty: "easy", question: "האירוע ב-14 באפריל:", options: [{text:"בְּאַרְבָּעָה עָשָׂר", isCorrect:true}, {text:"בְּאַרְבַּע עֶשְׂרֵה", isCorrect:false}, {text:"בְּאַרְבָּעָה עֶשְׂרֵה", isCorrect:false}] },
+                    { difficulty: "easy", question: "יש לי ___ חברות:", options: [{text:"שְׁתֵּי", isCorrect:true}, {text:"שְׁנֵי", isCorrect:false}, {text:"שְׁתַּיִם", isCorrect:false}] },
+                    { difficulty: "easy", question: "7 צלחות:", options: [{text:"שֶׁבַע", isCorrect:true}, {text:"שִׁבְעָה", isCorrect:false}, {text:"שְׁבִיעִית", isCorrect:false}] },
+                    { difficulty: "easy", question: "רחוב מספר 5:", options: [{text:"חָמֵשׁ", isCorrect:true, rationale:"מספר סתמי בנקבה."}, {text:"חֲמִשָּׁה", isCorrect:false}, {text:"חֲמִישִׁי", isCorrect:false}] },
+                    { difficulty: "easy", question: "4 ספרים:", options: [{text:"אַרְבָּעָה", isCorrect:true}, {text:"אַרְבַּע", isCorrect:false}, {text:"אַרְבַּעַת", isCorrect:false}] },
+                    { difficulty: "easy", question: "קניתי 2 עפרונות:", options: [{text:"שְׁנֵי", isCorrect:true}, {text:"שְׁנַיִם", isCorrect:false}, {text:"שְׁתֵּי", isCorrect:false}] },
+                    { difficulty: "easy", question: "8 בנות:", options: [{text:"שְׁמוֹנֶה", isCorrect:true}, {text:"שְׁמוֹנָה", isCorrect:false}, {text:"שְׁמוֹנַת", isCorrect:false}] },
+                    { difficulty: "easy", question: "1 מברשת:", options: [{text:"אַחַת", isCorrect:true}, {text:"אֶחָד", isCorrect:false}, {text:"אֶחָדָה", isCorrect:false}] },
+                    { difficulty: "easy", question: "9 שקלים:", options: [{text:"תִּשְׁעָה", isCorrect:true}, {text:"תֵּשַׁע", isCorrect:false}, {text:"תְּשִׁיעִית", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "קניתי 17 חולצות:", options: [{text:"שְׁבַע עֶשְׂרֵה", isCorrect:true}, {text:"שִׁבְעָה עָשָׂר", isCorrect:false}, {text:"שִׁבְעַת עָשָׂר", isCorrect:false}] },
+                    { difficulty: "medium", question: "___ התלמידים הגיעו?", options: [{text:"שְׁמוֹנַת", isCorrect:true, rationale:"נסמך זכר."}, {text:"שְׁמוֹנָה", isCorrect:false}, {text:"שְׁמוֹנֶה", isCorrect:false}] },
+                    { difficulty: "medium", question: "פי 4 יותר:", options: [{text:"פי אַרְבָּעָה", isCorrect:true}, {text:"פי אַרְבַּע", isCorrect:false}, {text:"פי רְבִיעִי", isCorrect:false}] },
+                    { difficulty: "medium", question: "21 בנות:", options: [{text:"עֶשְׂרִים וְאַחַת", isCorrect:true}, {text:"עֶשְׂרִים וְאֶחָד", isCorrect:false}, {text:"עֶשְׂרִים וְרִאשׁוֹנָה", isCorrect:false}] },
+                    { difficulty: "medium", question: "ב-3 במרץ:", options: [{text:"בִּשְׁלוֹשָׁה במרץ", isCorrect:true}, {text:"בְּשָׁלוֹשׁ במרץ", isCorrect:false}, {text:"בַּשְּׁלִישִׁי במרץ", isCorrect:false}] },
+                    { difficulty: "medium", question: "היא בת 15:", options: [{text:"חֲמֵשׁ עֶשְׂרֵה", isCorrect:true}, {text:"חֲמִשָּׁה עָשָׂר", isCorrect:false}, {text:"חֲמִשַּׁת עָשָׂר", isCorrect:false}] },
+                    { difficulty: "medium", question: "יש כאן 11 כיסאות:", options: [{text:"אַחַד עָשָׂר", isCorrect:true}, {text:"אַחַת עֶשְׂרֵה", isCorrect:false}, {text:"אֶחָד עָשָׂר", isCorrect:false}] },
+                    { difficulty: "medium", question: "ראיתי ___ הילדות.", options: [{text:"שְׁלוֹשׁ", isCorrect:true, rationale:"נסמך נקבה (שלוש ה...)."}, {text:"שְׁלוֹשֶׁת", isCorrect:false}, {text:"שָׁלוֹשׁ", isCorrect:false}] },
+                    { difficulty: "medium", question: "שעה 14:00 (בעברית):", options: [{text:"שְׁתַּיִם", isCorrect:true, rationale:"שעה היא נקבה."}, {text:"שְׁנַיִם", isCorrect:false}, {text:"שְׁתֵּי", isCorrect:false}] },
+                    { difficulty: "medium", question: "12 פומליות:", options: [{text:"שְׁתֵּים עֶשְׂרֵה", isCorrect:true}, {text:"שְׁנֵים עָשָׂר", isCorrect:false}, {text:"שְׁתֵּי עֶשְׂרֵה", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "שנת 2005:", options: [{text:"אַלְפַּיִם וְחָמֵשׁ", isCorrect:true}, {text:"אַלְפַּיִם וַחֲמִשָּׁה", isCorrect:false}, {text:"שְׁנֵי אֲלָפִים וְחָמֵשׁ", isCorrect:false}] },
+                    { difficulty: "hard", question: "3000:", options: [{text:"שְׁלֹשֶׁת אֲלָפִים", isCorrect:true}, {text:"שְׁלוֹשָׁה אֲלָפִים", isCorrect:false}, {text:"שְׁלוֹשׁ אֲלָפִים", isCorrect:false}] },
+                    { difficulty: "hard", question: "קו ___ (7):", options: [{text:"קו שֶׁבַע", isCorrect:true, rationale:"סתמי בנקבה."}, {text:"קו שִׁבְעָה", isCorrect:false}, {text:"קו הַשְּׁבִיעִי", isCorrect:false}] },
+                    { difficulty: "hard", question: "12 סועדים:", options: [{text:"שְׁנֵים עָשָׂר", isCorrect:true}, {text:"שְׁתֵּים עֶשְׂרֵה", isCorrect:false}, {text:"שְׁנֵי עֲשָׂרָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "18 חברים:", options: [{text:"שְׁמוֹנָה עָשָׂר", isCorrect:true}, {text:"שְׁמוֹנֶה עֶשְׂרֵה", isCorrect:false}, {text:"שְׁמוֹנַת עָשָׂר", isCorrect:false}] },
+                    { difficulty: "hard", question: "שנת 1984:", options: [{text:"אלף תשע מאות שמונים וארבע", isCorrect:true}, {text:"אלף תשעה מאות שמונים וארבעה", isCorrect:false}, {text:"אלף תשע מאות שמונים וארבעה", isCorrect:false}] },
+                    { difficulty: "hard", question: "בחר את התקין:", options: [{text:"פַּעֲמַיִם", isCorrect:true, rationale:"פעם היא נקבה, פעמיים זו צורת הזוגי."}, {text:"שְׁנֵי פעמים", isCorrect:false}, {text:"שְׁתֵּי פעמים", isCorrect:false}] },
+                    { difficulty: "hard", question: "6 מיליון:", options: [{text:"שִׁשָּׁה מִילְיוֹנִים", isCorrect:true, rationale:"מיליון זה זכר."}, {text:"שֵׁשׁ מִילְיוֹנִים", isCorrect:false}, {text:"שֵׁשֶׁת מִילְיוֹנִים", isCorrect:false}] },
+                    { difficulty: "hard", question: "הילד ה-13 בתור:", options: [{text:"הַשְּׁלוֹשָׁה עָשָׂר", isCorrect:true}, {text:"הַשְּׁלוֹשׁ עֶשְׂרֵה", isCorrect:false}, {text:"הַשְּׁלִישִׁי עָשָׂר", isCorrect:false}] },
+                    { difficulty: "hard", question: "הוצאתי 8,000 שקלים:", options: [{text:"שְׁמוֹנַת אֲלָפִים", isCorrect:true, rationale:"נסמך זכר לאלפים."}, {text:"שְׁמוֹנֶה אֲלָפִים", isCorrect:false}, {text:"שְׁמוֹנָה אֲלָפִים", isCorrect:false}] }
                 ]
             },
             "noun_formation": {
                 id: "noun_formation", label: "תצורת השם", icon: "🏗️", title: "תצורת השם",
-                intro: "המנגנונים שדרכם העברית מייצרת שמות עצם ותארים. זיהוי מדויק של דרך התצורה והבסיס הוא סעיף קבוע בבגרות.",
+                intro: "המנגנונים ליצירת שמות עצם. זיהוי בסיס לעומת שורש.",
                 concepts: [
-                    { title: "שורש + משקל", content: "חיבור של שורש (לרוב תלת-עיצורי) לתוך תבנית קבועה הנקראת משקל. דוגמה: שורש ס-פ-ר + משקל קַטָּל (בעלי מקצוע) = סַפָּר. סימן זיהוי: אם אין 'בסיס' מילוני עצמאי שלם בתוך המילה, זה שורש ומשקל." },
-                    { title: "בסיס + צורן סופי", content: "הוספת סיומת (צורן) למילה קיימת ושלמה (בסיס). דוגמה: עיתון (בסיס שלם) + ַאי (צורן מקצוע) = עיתונאי. מילון + ֹן (צורן הקטנה) = מילונאי." },
-                    { title: "הלחם בסיסים", content: "חיבור שתי מילים נפרדות ושלמות למילה אחת בעלת משמעות ממזגת. דוגמה: רמז + אור = רמזור. חי + דק = חיידק." },
-                    { title: "צורני גיזרון שכיחים", content: "חובה להכיר לבגרות: -וֹן (הקטנה, כתב עת, אוסף), -וּת (שם מופשט - ילדות), -ִי (שייכות/תואר - ישראלי), -ַאי/ָן (בעל מקצוע - חשמלאי)." }
+                    { title: "שורש + משקל", content: "אין בסיס עצמאי (ס-פ-ר + קַטָּל = סַפָּר)." },
+                    { title: "בסיס + צורן", content: "מילה שלמה + סיומת (עיתון + ַאי = עיתונאי)." },
+                    { title: "הלחם בסיסים", content: "2 מילים שלמות מתחברות (רמז + אור = רמזור)." },
+                    { title: "צורנים שכיחים", content: "-וֹן (הקטנה), -וּת (מופשט), -ִי (תואר)." }
                 ],
                 conjugations: [
                     { root: "שורש+משקל", past: "ש-מ-ר + מִקְטָל", present: "מִשְׁמָר", future: "ס-פ-ר + קַטָּל", infinitive: "סַפָּר" },
@@ -403,146 +541,219 @@
                     { root: "הלחם בסיס", past: "חי+דק", present: "חיידק", future: "רכבת+כבל", infinitive: "רכבל" }
                 ],
                 quiz: [
-                    { difficulty: "easy", question: "באיזו דרך תצורה נוצרה המילה 'מַדְחֹם'?", options: [{text:"הלחם בסיסים", isCorrect:true, rationale:"חיבור של שתי המילים מד + חום."}, {text:"שורש ומשקל", isCorrect:false, rationale:"אין פה שורש ד-ח-מ ומשקל."}, {text:"בסיס וצורן סופי", isCorrect:false, rationale:"'חום' אינו צורן סופי אלא מילה מלאה."}] },
-                    { difficulty: "easy", question: "מהי דרך התצורה של 'מַחְבֶּרֶת'?", options: [{text:"שורש ומשקל", isCorrect:true, rationale:"שורש ח-ב-ר שהוכנס למשקל מַקְטֶלֶת, משקל המשמש לרוב לציון כלים ומכשירים."}, {text:"הלחם בסיסים", isCorrect:false, rationale:"לא מורכב משתי מילים."}, {text:"בסיס וצורן", isCorrect:false, rationale:"אין בסיס מילוני 'מחבר'."}] },
-                    { difficulty: "easy", question: "כיצד נוצרה המילה 'חַשְׁמַלַּאי'?", options: [{text:"בסיס + צורן סופי", isCorrect:true, rationale:"הבסיס השלם הוא 'חשמל' והוסף אליו הצורן '-ַאי' המציין בעל מקצוע."}, {text:"שורש מרובע ומשקל", isCorrect:false, rationale:"חשמל הוא שורש (ח-ש-מ-ל), אך כאן הוא משמש כבסיס שלם לפני הוספת הצורן."}, {text:"הלחם בסיסים", isCorrect:false, rationale:"'אי' איננה מילה בפני עצמה."}] },
-                    { difficulty: "medium", question: "מהו הבסיס והצורן הסופי במילה 'תַּקְלִיטוֹן'?", options: [{text:"תקליט (בסיס) + וֹן (צורן הקטנה)", isCorrect:true, rationale:"תקליטון הוא 'תקליט קטן' (במקור - דיסקט)."}, {text:"תקליט (בסיס) + וֹן (צורן אוסף)", isCorrect:false, rationale:"זה לא אוסף של תקליטים."}, {text:"תקל (בסיס) + יטון", isCorrect:false, rationale:"פירוק שגוי של המילה."}] },
-                    { difficulty: "medium", question: "המילה 'מִדְרָכָה' נוצרה משורש ד-ר-כ ומשקל מִקְטָלָה. מהי משמעות המשקל בדרך כלל?", options: [{text:"מקומות", isCorrect:true, rationale:"משקל מִקְטָלָה משמש לרוב למקומות (מרפאה, מספרה, מדרכה)."}, {text:"מכשירים", isCorrect:false, rationale:"מכשירים הם לרוב במשקל מַקְטֵל (מַדְפֵּס, מַקְלֵט)."}, {text:"בעלי מקצוע", isCorrect:false, rationale:"זה לרוב משקל קַטָּל (סַפָּר, צַלָּם)."}] },
-                    { difficulty: "medium", question: "איזו מילה מורכבת מבסיס + צורן סופי '־ִי' שמשמעותו תואר/שייכות?", options: [{text:"עִירוֹנִי", isCorrect:true, rationale:"הבסיס הוא עירון (או עיר) + י (תואר: משהו שקשור לעיר)."}, {text:"חָפְשִׁי", isCorrect:false, rationale:"זו מילה בסיסית, לא מורכבת מ'חופש'+י."}, {text:"מְגַלִּי", isCorrect:false, rationale:"זהו פועל נטוי (הוא מגלה אותי)."}] },
-                    { difficulty: "hard", question: "המילה 'מַחֲשֵׁבוֹן' (מחשב קטן) יכולה לבלבל בבגרות. מהי דרך התצורה שלה?", options: [{text:"בסיס וצורן סופי", isCorrect:true, rationale:"חשוב! הבסיס הוא המילה השלמה 'מַחֲשֵׁב' (שבעצמה נוצרה משורש ומשקל), והצורן הוא 'וֹן'."}, {text:"שורש ומשקל", isCorrect:false, rationale:"אין משקל 'מַקְטֵלוֹן'. התהליך היה דו-שלבי: קודם שורש ומשקל יצרו את 'מחשב', ואז בסיס וצורן יצרו 'מחשבון'."}, {text:"הלחם בסיסים", isCorrect:false, rationale:"'ון' אינו בסיס."}] },
-                    { difficulty: "hard", question: "איזה מהבאים הוא יוצא דופן בדרך התצורה שלו?", options: [{text:"רַכֶּבֶל", isCorrect:true, rationale:"רַכֶּבֶל נוצר בהלחם בסיסים (רכבת + כבל)."}, {text:"רַכֶּבֶת", isCorrect:false, rationale:"שורש ר-כ-ב + משקל מַקְטֶלֶת."}, {text:"תַּחְבּוּרָה", isCorrect:false, rationale:"שורש ח-ב-ר + משקל תַּקְטוּלָה."}] },
-                    { difficulty: "hard", question: "באיזו דרך תצורה נוצרה המילה 'תַּפוּזִינָה'?", options: [{text:"בסיס + צורן סופי (-ינה)", isCorrect:true, rationale:"הבסיס 'תפוז' (שהוא עצמו ראשי תיבות של תפוח זהב) + הצורן '-ינה' (כמו פריגת-ינה)."}, {text:"הלחם בסיסים", isCorrect:false, rationale:"המילה היא לא חיבור של תפוז + ינה כבסיס."}, {text:"ראשי תיבות בלבד", isCorrect:false, rationale:"תפוז זה ר\"ת, תפוזינה זו נגזרת."}] },
-                    { difficulty: "hard", question: "מה ההבדל בין הצורן '-וּת' במילה 'יַלְדוּת' לצורן '-וּת' במילה 'חֲנוּת'?", options: [{text:"בילדות הוא מציין שם מופשט, בחנות זהו חלק מהשורש והמשקל", isCorrect:true, rationale:"חנות נגזרת מהשורש ח-נ-ה/י. הסיומת ות כאן היא חלק מתבנית השם, בעוד שבילדות (ילד+ות) זה צורן לשם מופשט."}, {text:"אין הבדל, שניהם מופשטים", isCorrect:false, rationale:"חנות היא מקום פיזי, ילדות זה מושג מופשט."}, {text:"שניהם מציינים מקום", isCorrect:false, rationale:"ילדות לא מציין מקום."}] }
+                    // EASY (10)
+                    { difficulty: "easy", question: "דרך התצורה של 'מַדְחֹם'?", options: [{text:"הלחם בסיסים", isCorrect:true}, {text:"שורש ומשקל", isCorrect:false}, {text:"בסיס וצורן סופי", isCorrect:false}] },
+                    { difficulty: "easy", question: "דרך תצורה של 'מַחְבֶּרֶת'?", options: [{text:"שורש ומשקל", isCorrect:true}, {text:"הלחם בסיסים", isCorrect:false}, {text:"בסיס וצורן", isCorrect:false}] },
+                    { difficulty: "easy", question: "כיצד נוצרה 'חַשְׁמַלַּאי'?", options: [{text:"בסיס + צורן", isCorrect:true}, {text:"שורש מרובע ומשקל", isCorrect:false}, {text:"הלחם בסיסים", isCorrect:false}] },
+                    { difficulty: "easy", question: "'כדורסל' היא דוגמה ל:", options: [{text:"הלחם בסיסים", isCorrect:true}, {text:"שורש ומשקל", isCorrect:false}, {text:"בסיס וצורן", isCorrect:false}] },
+                    { difficulty: "easy", question: "המילה 'מִכְתָּב' נוצרה מ:", options: [{text:"שורש ומשקל", isCorrect:true}, {text:"הלחם", isCorrect:false}, {text:"בסיס וצורן", isCorrect:false}] },
+                    { difficulty: "easy", question: "הצורן '-ון' במילה 'דובון' משמעו:", options: [{text:"הקטנה", isCorrect:true}, {text:"אוסף", isCorrect:false}, {text:"בעל מקצוע", isCorrect:false}] },
+                    { difficulty: "easy", question: "בסיס 'עיתון' + 'אי' נותן:", options: [{text:"עיתונאי", isCorrect:true}, {text:"עיתון", isCorrect:false}, {text:"עיתונות", isCorrect:false}] },
+                    { difficulty: "easy", question: "איזו מילה היא ראשי תיבות?", options: [{text:"תנ\"ך", isCorrect:true}, {text:"חיידק", isCorrect:false}, {text:"מדרכה", isCorrect:false}] },
+                    { difficulty: "easy", question: "הצורן '-ות' מציין לרוב:", options: [{text:"שם מופשט", isCorrect:true}, {text:"הקטנה", isCorrect:false}, {text:"מקום", isCorrect:false}] },
+                    { difficulty: "easy", question: "המילה 'מקרר':", options: [{text:"שורש ק-ר-ר + מְקַטֵּל", isCorrect:true}, {text:"הלחם מק+רר", isCorrect:false}, {text:"בסיס קר + צורן", isCorrect:false}] },
+                    // MEDIUM (10)
+                    { difficulty: "medium", question: "הבסיס והצורן ב'תַּקְלִיטוֹן'?", options: [{text:"תקליט (בסיס) + וֹן (צורן הקטנה)", isCorrect:true}, {text:"תקליט + וֹן (אוסף)", isCorrect:false}, {text:"תקל + יטון", isCorrect:false}] },
+                    { difficulty: "medium", question: "משמעות המשקל ב'מִדְרָכָה'?", options: [{text:"מקומות", isCorrect:true}, {text:"מכשירים", isCorrect:false}, {text:"בעלי מקצוע", isCorrect:false}] },
+                    { difficulty: "medium", question: "בסיס + צורן תואר/שייכות?", options: [{text:"עִירוֹנִי", isCorrect:true}, {text:"חָפְשִׁי", isCorrect:false}, {text:"מְגַלִּי", isCorrect:false}] },
+                    { difficulty: "medium", question: "דרך התצורה של 'מִכְלָלָה'?", options: [{text:"שורש ומשקל", isCorrect:true}, {text:"בסיס וצורן", isCorrect:false}, {text:"הלחם בסיסים", isCorrect:false}] },
+                    { difficulty: "medium", question: "המילה 'קַרְנַף':", options: [{text:"הלחם בסיסים (קרן + אף)", isCorrect:true}, {text:"שורש ק-ר-נ-פ", isCorrect:false}, {text:"בסיס קרן + ף", isCorrect:false}] },
+                    { difficulty: "medium", question: "הצורן '-ון' במילה 'מילון':", options: [{text:"אוסף (של מילים)", isCorrect:true}, {text:"הקטנה", isCorrect:false}, {text:"תואר", isCorrect:false}] },
+                    { difficulty: "medium", question: "המילה שַׁמְרָן נוצרה:", options: [{text:"שמור/שמר + ָן (בסיס+צורן)", isCorrect:true}, {text:"שורש ש-מ-ר + פעלן", isCorrect:false}, {text:"הלחם", isCorrect:false}] },
+                    { difficulty: "medium", question: "משקל 'מַקְטֵל' מציין לרוב:", options: [{text:"כלים ומכשירים", isCorrect:true}, {text:"מחלות", isCorrect:false}, {text:"מקצועות", isCorrect:false}] },
+                    { difficulty: "medium", question: "המילה 'יְפֵיפֶה':", options: [{text:"שורש י-פ-ה + הכפלה", isCorrect:true}, {text:"בסיס יופי + פה", isCorrect:false}, {text:"ראשי תיבות", isCorrect:false}] },
+                    { difficulty: "medium", question: "המילה רַמְקוֹל:", options: [{text:"הלחם בסיסים (רם + קול)", isCorrect:true}, {text:"שורש מרובע", isCorrect:false}, {text:"בסיס + צורן", isCorrect:false}] },
+                    // HARD (10)
+                    { difficulty: "hard", question: "דרך התצורה של 'מַחֲשֵׁבוֹן'?", options: [{text:"בסיס וצורן סופי", isCorrect:true, rationale:"מחשב (בסיס) + ון."}, {text:"שורש ומשקל", isCorrect:false}, {text:"הלחם בסיסים", isCorrect:false}] },
+                    { difficulty: "hard", question: "איזו יוצאת דופן בדרך תצורה?", options: [{text:"רַכֶּבֶל", isCorrect:true, rationale:"הלחם (כל השאר שורש ומשקל)."}, {text:"רַכֶּבֶת", isCorrect:false}, {text:"תַּחְבּוּרָה", isCorrect:false}] },
+                    { difficulty: "hard", question: "התצורה של 'תַּפוּזִינָה'?", options: [{text:"בסיס + צורן סופי", isCorrect:true}, {text:"הלחם בסיסים", isCorrect:false}, {text:"ראשי תיבות בלבד", isCorrect:false}] },
+                    { difficulty: "hard", question: "ההבדל בין '-וּת' ב'יַלְדוּת' ל'חֲנוּת'?", options: [{text:"בילדות זה צורן מופשט, בחנות זה חלק מהמשקל והשורש ח-נ-ה", isCorrect:true}, {text:"שניהם מופשטים", isCorrect:false}, {text:"שניהם ציון מקום", isCorrect:false}] },
+                    { difficulty: "hard", question: "המילה 'תַּחֲזִיּוֹת':", options: [{text:"שורש ומשקל", isCorrect:true, rationale:"ח-ז-ה ב-תקטילה."}, {text:"בסיס וצורן", isCorrect:false}, {text:"הלחם", isCorrect:false}] },
+                    { difficulty: "hard", question: "המילה 'עִתּוֹנַאי':", options: [{text:"בסיס וצורן (שהבסיס עיתון נוצר בעצמו מעת+ון)", isCorrect:true}, {text:"שורש מרובע ע-ת-נ-א", isCorrect:false}, {text:"הלחם", isCorrect:false}] },
+                    { difficulty: "hard", question: "המילה אַלְחוּט:", options: [{text:"הלחם בסיסים (אל + חוט)", isCorrect:true}, {text:"שורש א-ל-ח-ט", isCorrect:false}, {text:"בסיס וצורן", isCorrect:false}] },
+                    { difficulty: "hard", question: "הצורן '-ון' במילה 'שבועון':", options: [{text:"כתב עת/מחזוריות", isCorrect:true}, {text:"הקטנה", isCorrect:false}, {text:"בעל מקצוע", isCorrect:false}] },
+                    { difficulty: "hard", question: "המילה 'קַלֶּטֶת':", options: [{text:"שורש ומשקל (ק-ל-ט)", isCorrect:true}, {text:"הלחם (קל+תת)", isCorrect:false}, {text:"בסיס וצורן", isCorrect:false}] },
+                    { difficulty: "hard", question: "מהי צורת הבסיס של 'פִּיּוֹת'?", options: [{text:"פֶּה", isCorrect:true, rationale:"פה -> פיות. זה אינו צורן ריבוי רגיל אלא נטייה."}, {text:"פי", isCorrect:false}, {text:"פיה", isCorrect:false}] }
                 ]
             }
         };
 
         // ==========================================
-        // 3. READING COMPREHENSION (Unseens) - HIGH LEVEL
+        // 3. READING COMPREHENSION (Unseens)
         // ==========================================
         const readingData = {
             "read-1": { 
                 id: "read-1", difficulty: "easy", title: "תרומת הספורט לבריאות הנפש", icon: "🏃", 
                 text: `כולנו יודעים שפעילות גופנית טובה לבריאות הגוף – היא מחזקת את השרירים, משפרת את סיבולת הלב והריאה ומסייעת בשמירה על משקל תקין. אולם, בשנים האחרונות מתברר כי השפעתה של הפעילות הגופנית על בריאות הנפש חשובה לא פחות מחשיבותה לבריאות הפיזית.<br><br>מחקרים רבים מוכיחים כי בזמן מאמץ גופני, המוח האנושי מפריש חומרים כימיים הנקראים "אנדורפינים". חומרים אלו פועלים כמשככי כאבים טבעיים וידועים ביכולתם לשפר את מצב הרוח, להפחית מתחים ולשכך תחושות של חרדה ודיכאון קל. יתרה מזאת, עצם ההתמדה בפעילות גופנית שגרתית תורמת להעלאת הדימוי העצמי ולתחושת מסוגלות אישית, כיוון שהאדם מציב לעצמו מטרות ומצליח לעמוד בהן.<br><br>מומחים ממליצים לשלב לפחות 30 דקות של פעילות גופנית ביום, גם אם מדובר בהליכה מהירה או רכיבה על אופניים, כדי לזכות ביתרונות אלו ולשמור על נפש בריאה בגוף בריא.`, 
                 quiz: [
-                    { question: "על פי הטקסט, מהם אנדורפינים?", options: [{text:"חומרים כימיים המופרשים במוח ומשפרים את מצב הרוח", isCorrect:true, rationale:"הטקסט מגדיר במפורש את האנדורפינים כחומרים כימיים הפועלים כמשככי כאבים ומשפרי מצב רוח."}, {text:"שרירים מיוחדים המתפתחים בזמן הליכה מהירה", isCorrect:false, rationale:"האנדורפינים מופרשים במוח, לא בשרירים."}, {text:"ויטמינים שיש ליטול לפני תחילת פעילות מאומצת", isCorrect:false, rationale:"הם מיוצרים טבעית במוח, ולא נלקחים חיצונית לפי הטקסט."}] },
-                    { question: "כיצד ההתמדה בספורט משפיעה על הדימוי העצמי?", options: [{text:"היא תורמת לתחושת מסוגלות בעקבות עמידה במטרות", isCorrect:true, rationale:"מצוין שעצם ההתמדה והעמידה ביעדים משפרת את הדימוי העצמי."}, {text:"היא גורמת לאדם להרגיש עייף ולכן רגוע יותר", isCorrect:false, rationale:"עייפות אינה ההסבר לשיפור הדימוי העצמי."}, {text:"היא מפחיתה את התחרותיות ולכן מפחיתה מתח", isCorrect:false, rationale:"תחרותיות לא מוזכרת בטקסט כגורם מתווך."}] },
-                    { question: "מהי ההמלצה המרכזית בסוף המאמר?", options: [{text:"לבצע לפחות 30 דקות של פעילות, אפילו הליכה מהירה", isCorrect:true, rationale:"הפסקה האחרונה ממליצה בבירור על חצי שעה של פעילות כדי לזכות ביתרונות."}, {text:"להירשם לחדר כושר מקצועי פעם בשבוע בלבד", isCorrect:false, rationale:"חדר כושר לא מוזכר, וההמלצה היא לפעילות יומיומית."}, {text:"להתמקד אך ורק בתזונה ולהפחית פעילות מאומצת", isCorrect:false, rationale:"ההמלצה היא בדיוק הפוכה."}] }
+                    { question: "על פי הטקסט, מהם אנדורפינים?", options: [{text:"חומרים כימיים המופרשים במוח ומשפרים את מצב הרוח", isCorrect:true}, {text:"שרירים מיוחדים המתפתחים בזמן הליכה", isCorrect:false}, {text:"ויטמינים שיש ליטול לפני אימון", isCorrect:false}] },
+                    { question: "כיצד ההתמדה בספורט משפיעה על הדימוי העצמי?", options: [{text:"תורמת לתחושת מסוגלות בעקבות עמידה במטרות", isCorrect:true}, {text:"גורמת לעייפות ולכן לרוגע", isCorrect:false}, {text:"מפחיתה תחרותיות אישית", isCorrect:false}] },
+                    { question: "מהי ההמלצה המרכזית בסוף המאמר?", options: [{text:"שילוב של לפחות 30 דקות פעילות ביום", isCorrect:true}, {text:"רישום לחדר כושר פעם בשבוע", isCorrect:false}, {text:"להתמקד אך ורק בתזונה נכונה", isCorrect:false}] },
+                    { question: "מלבד שיפור מצב הרוח, איזו פעולה נוספת מבצעים האנדורפינים?", options: [{text:"הם פועלים כמשככי כאבים טבעיים", isCorrect:true}, {text:"הם מחזקים ישירות את שריר הלב", isCorrect:false}, {text:"הם בונים תאי שריר חדשים", isCorrect:false}] },
+                    { question: "לפי הטקסט, כיצד מתוארת חשיבותה של הפעילות הגופנית לנפש לעומת הגוף?", options: [{text:"היא חשובה לנפש לא פחות מאשר לבריאות הפיזית", isCorrect:true}, {text:"היא מועילה בעיקר לגוף ורק במעט לנפש", isCorrect:false}, {text:"היא מועילה לנפש בלבד", isCorrect:false}] }
                 ] 
             },
             "read-2": { 
                 id: "read-2", difficulty: "easy", title: "הכחדת הדבורים והחקלאות", icon: "🐝", 
                 text: `דבורת הדבש, אותו חרק קטן ומזמזם, נושאת על גבה אחריות עצומה לקיומה של החקלאות העולמית ולתזונת האדם. תפקידן המרכזי של הדבורים אינו ייצור הדבש, כפי שרבים נוטים לחשוב, אלא תהליך ה"האבקה". במהלך חיפושן אחר צוף, הדבורים מעבירות אבקה מפרח לפרח, ובכך מאפשרות לצמחים להתרבות ולהניב פירות וירקות. למעשה, מעריכים שכליש ממזון האדם תלוי בהאבקה של דבורים.<br><br>בשנים האחרונות, מדענים מתריעים על תופעה מדאיגה של "היעלמות הדבורים". מושבות שלמות נעלמות או קורסות בפתאומיות. הסיבות לכך מגוונות: שימוש אינטנסיבי בחומרי הדברה רעילים בחקלאות, צמצום שטחי המחיה הטבעיים של הדבורים לטובת בנייה, ושינויי האקלים הגלובליים שמשבשים את זמני הפריחה.<br><br>ללא דבורים, הגידולים החקלאיים ייפגעו אנושות, ועלול להיווצר מחסור עולמי חמור במזון. לכן, ארגוני סביבה פועלים כיום לקדם חקלאות אורגנית ולהפחית את השימוש בכימיקלים פוגעניים.`, 
                 quiz: [
-                    { question: "מהו התפקיד הקריטי ביותר של הדבורים על פי המאמר?", options: [{text:"תהליך ההאבקה המאפשר את התרבות הצמחים", isCorrect:true, rationale:"המאמר מדגיש שהאבקה, ולא ייצור דבש, היא התרומה המרכזית לתזונת האדם."}, {text:"ייצור דבש איכותי עבור התעשייה", isCorrect:false, rationale:"המאמר טוען מפורשות שזה לא התפקיד המרכזי."}, {text:"הגנה על פרחים מפני מזיקים אחרים", isCorrect:false, rationale:"לא מוזכר כי הדבורים מגנות על פרחים."}] },
-                    { question: "איזו מן הבאות **אינה** מהווה סיבה להיעלמות הדבורים לפי הטקסט?", options: [{text:"ריבוי של טורפים טבעיים כגון ציפורים", isCorrect:true, rationale:"הסיבות שהוזכרו: הדברה, צמצום שטחים ושינויי אקלים. טורפים לא הוזכרו."}, {text:"שימוש בחומרי הדברה בחקלאות", isCorrect:false, rationale:"סיבה זו הוזכרה במפורש."}, {text:"שינויי האקלים המשבשים את הפריחה", isCorrect:false, rationale:"גם סיבה זו הוזכרה."}] },
-                    { question: "מה מציעים ארגוני הסביבה כפתרון למשבר?", options: [{text:"קידום חקלאות אורגנית והפחתת כימיקלים", isCorrect:true, rationale:"המשפט האחרון מציג זאת כפתרון שארגוני הסביבה מקדמים."}, {text:"בניית כוורות מלאכותיות בערים גדולות", isCorrect:false, rationale:"לא מוזכר בטקסט."}, {text:"האבקה ידנית של צמחים על ידי חקלאים", isCorrect:false, rationale:"זהו פתרון יקר ולא סביר שלא הוזכר."}] }
+                    { question: "מהו התפקיד הקריטי של הדבורים על פי הטקסט?", options: [{text:"תהליך ההאבקה המאפשר התרבות צמחים", isCorrect:true}, {text:"ייצור דבש איכותי לתעשייה", isCorrect:false}, {text:"הגנה על פרחים מטורפים", isCorrect:false}] },
+                    { question: "איזו מן הבאות אינה מהווה סיבה להיעלמות הדבורים לפי הטקסט?", options: [{text:"ריבוי טורפים טבעיים כגון ציפורים", isCorrect:true}, {text:"שימוש אינטנסיבי בחומרי הדברה", isCorrect:false}, {text:"שינויי האקלים ושיבוש הפריחה", isCorrect:false}] },
+                    { question: "מה מציעים ארגוני הסביבה כפתרון למשבר?", options: [{text:"קידום חקלאות אורגנית והפחתת כימיקלים", isCorrect:true}, {text:"בניית כוורות מלאכותיות בערים", isCorrect:false}, {text:"האבקה ידנית על ידי האדם", isCorrect:false}] },
+                    { question: "איזה אחוז (בקירוב) ממזון האדם תלוי בתהליך ההאבקה?", options: [{text:"כשליש (33%)", isCorrect:true}, {text:"כחצי (50%)", isCorrect:false}, {text:"כעשרה אחוזים (10%)", isCorrect:false}] },
+                    { question: "מה תהיה התוצאה הישירה אם תהליך ההאבקה של הדבורים ייפסק?", options: [{text:"פגיעה אנושה בגידולים ומחסור חמור במזון", isCorrect:true}, {text:"ייקור מחירי הדבש בלבד", isCorrect:false}, {text:"צמיחה מוגברת של צמחי בר לא רצויים", isCorrect:false}] }
                 ] 
             },
             "read-3": { 
                 id: "read-3", difficulty: "easy", title: "שינה חכמה ולמידה", icon: "😴", 
                 text: `לעתים קרובות תלמידים נוהגים להישאר ערים עד השעות הקטנות של הלילה לפני מבחן חשוב, מתוך אמונה שככל שילמדו יותר, כך יצליחו יותר. אולם, חוקרי מוח טוענים שזוהי טעות חמורה. השינה אינה 'בזבוז זמן' או כיבוי של המוח, אלא תהליך אקטיבי וקריטי לקיבוע הזיכרון ולעיבוד המידע שנלמד במהלך היום.<br><br>כאשר אנו ישנים, המוח עובר על החוויות והנתונים שספגנו, מסנן את המידע הטפל ו'צורב' את המידע החשוב בזיכרון לטווח הארוך. מחסור בשינה לא רק שמונע את התהליך הזה, אלא גם פוגע משמעותית ביכולת הקשב והשליפה של מידע ביום למחרת.<br><br>מומלץ לתלמידים להקפיד על 8 שעות שינה לפחות בלילה שלפני הבחינה, שכן מוח רענן שישן היטב, יוכל להתמודד עם שאלות המבחן בצורה מהירה ויעילה הרבה יותר ממוח עייף ועמוס.`, 
                 quiz: [
-                    { question: "מדוע הישארות ערים בלילה לפני מבחן נחשבת ל'טעות חמורה'?", options: [{text:"כי השינה קריטית לקיבוע המידע שנלמד בזיכרון", isCorrect:true, rationale:"חוקרי המוח מסבירים שהשינה חיונית לעיבוד וצריבת המידע בזיכרון."}, {text:"כי בלילה העיניים מתעייפות מלקרוא", isCorrect:false, rationale:"זו עובדה נכונה אולי, אבל לא הסיבה המרכזית שהטקסט מציג."}, {text:"משום שבלילה המוח נכבה לחלוטין ולא קולט מידע", isCorrect:false, rationale:"הטקסט טוען בדיוק ההפך: המוח אקטיבי מאוד בזמן השינה."}] },
-                    { question: "מה מבצע המוח האנושי בזמן השינה?", options: [{text:"מסנן מידע טפל ושומר מידע חשוב לטווח הארוך", isCorrect:true, rationale:"מוזכר כי המוח עובר על החוויות, מסנן טפל וצורב את החשוב."}, {text:"מייצר חומרי הזנה שמחזקים את הראייה", isCorrect:false, rationale:"לא מוזכר במאמר."}, {text:"מתנתק לחלוטין מכל פעילות כדי לאגור אנרגיה חומרית", isCorrect:false, rationale:"שוב, המוח לא מתנתק, הוא אקטיבי."}] },
-                    { question: "מהי ההשלכה של מחסור בשינה על יום הבחינה?", options: [{text:"פגיעה בקשב וביכולת 'לשלוף' את המידע מהזיכרון", isCorrect:true, rationale:"הטקסט מדגיש כי מחסור בשינה מקשה על שליפת נתונים בעת המבחן."}, {text:"תחושת רעב קשה במהלך המבחן", isCorrect:false, rationale:"אולי נכון קלינית, אבל לא מופיע בטקסט הזה."}, {text:"שכחה מוחלטת של כל מה שנלמד אי פעם", isCorrect:false, rationale:"הגזמה פראית, הטקסט מדבר על קושי בשליפה וקשב, לא שכחה מוחלטת."}] }
+                    { question: "מדוע הישארות ערים בלילה לפני מבחן נחשבת ל'טעות חמורה'?", options: [{text:"כי השינה קריטית לקיבוע המידע שנלמד בזיכרון", isCorrect:true}, {text:"כי העיניים מתעייפות מלקרוא בחושך", isCorrect:false}, {text:"כי בבוקר המוח מתחיל ללמוד מחדש", isCorrect:false}] },
+                    { question: "מה מבצע המוח האנושי בזמן השינה?", options: [{text:"מסנן מידע טפל ושומר מידע חשוב לטווח הארוך", isCorrect:true}, {text:"מייצר חומרי הזנה לשרירים", isCorrect:false}, {text:"מתנתק לחלוטין מכל פעילות קוגניטיבית", isCorrect:false}] },
+                    { question: "מהי ההשלכה של מחסור בשינה ביום למחרת?", options: [{text:"פגיעה משמעותית בקשב וביכולת השליפה של המידע", isCorrect:true}, {text:"תחושת רעב קשה במהלך שעות הבוקר", isCorrect:false}, {text:"שכחה מוחלטת של כל החומר שנלמד אי פעם", isCorrect:false}] },
+                    { question: "מה עומד בבסיס האמונה השגויה של תלמידים שנשארים ערים בלילה?", options: [{text:"האמונה שככל שילמדו יותר שעות, כך יצליחו יותר", isCorrect:true}, {text:"האמונה שהלילה הוא הזמן היחיד שבו שקט בבית", isCorrect:false}, {text:"התחושה שהמבחן אינו מספיק חשוב", isCorrect:false}] },
+                    { question: "כמה שעות שינה מומלצות לפחות לפני בחינה, על פי המאמר?", options: [{text:"8 שעות", isCorrect:true}, {text:"10 שעות", isCorrect:false}, {text:"6 שעות", isCorrect:false}] }
                 ] 
             },
             "read-4": { 
                 id: "read-4", difficulty: "medium", title: "כלכלת תשומת הלב", icon: "📱", 
                 text: `בעידן הדיגיטלי בו אנו חיים, המשאב היקר והמבוקש ביותר על ידי חברות הטכנולוגיה הענקיות אינו נפט או זהב, אלא "תשומת הלב" שלנו. מודל הרווח של הרשתות החברתיות ואפליקציות התוכן מבוסס על אקסיומה פשוטה: ככל שנבלה יותר זמן בתוך האפליקציה, כך ייחשפו לעינינו יותר פרסומות, והחברות יגרפו רווחים אדירים מן המפרסמים.<br><br>כדי להשיג מטרה זו, מהנדסי תוכנה ומומחי מדעי ההתנהגות משלבים באפליקציות אלמנטים ממכרים, המזכירים מנגנונים של מכונות הימורים. גלילה אינסופית (Infinite Scroll), התראות קופצות (Push Notifications) צבעוניות, ולייקים – כל אלו מתוכננים בקפידה כדי לעורר שחרור קבוע של דופמין במוחנו. הדופמין מעודד אותנו להישאר מחוברים ולחפש את הריגוש הקטן הבא.<br><br>לכלכלת תשומת הלב יש מחיר חברתי וקוגניטיבי כבד. מחקרים מראים כי היכולת שלנו להתרכז במטלה אחת לאורך זמן (טווח הקשב) נמצאת בירידה מתמדת. כמו כן, הרצון המתמיד של הפלטפורמות ללכוד את עינינו מעודד אלגוריתמים לקדם תוכן קיצוני, מקטב או מעורר זעם, שכן תוכן כזה הוכח כמעורר מעורבות (Engagement) גבוהה יותר מאשר תוכן מתון ושקול.`, 
                 quiz: [
-                    { question: "על איזו אקסיומה (הנחת יסוד) מבוסס מודל הרווח של הרשתות החברתיות?", options: [{text:"זמן שהייה ארוך באפליקציה מוביל לחשיפה רבה לפרסומות ולהגדלת רווחים", isCorrect:true, rationale:"הטקסט מציין בבירור כי זמן מסך שווה ליותר חשיפה למפרסמים ולכן ליותר כסף."}, {text:"גביית דמי מנוי חודשיים מהמשתמשים הקבועים", isCorrect:false, rationale:"רוב הרשתות המוזכרות הן חינמיות ומבוססות פרסומות, לא דמי מנוי."}, {text:"מכירת מידע אישי של המשתמשים לממשלות", isCorrect:false, rationale:"לא זהו המודל המרכזי שמוזכר בטקסט המסוים הזה."}] },
-                    { question: "לשם מה משתמשים המהנדסים ב'התראות קופצות' וב'לייקים'?", options: [{text:"כדי לעורר שחרור דופמין במוח שיגרום למשתמש לחזור לאפליקציה", isCorrect:true, rationale:"הטקסט משווה זאת למכונת הימורים שנועדה לייצר שחרור דופמין והתמכרות."}, {text:"כדי להקל על המשתמש למצוא תוכן חינוכי", isCorrect:false, rationale:"המטרה היא הישארות באפליקציה, לא ערך חינוכי."}, {text:"כדי לחסוך בסוללה של המכשיר הנייד", isCorrect:false, rationale:"אין קשר לחיי סוללה."}] },
-                    { question: "מדוע האלגוריתמים נוטים לקדם תוכן קיצוני ומקטב?", options: [{text:"מפני שתוכן כזה מייצר מעורבות גבוהה ולוכד את תשומת הלב", isCorrect:true, rationale:"זעם וקיטוב גורמים לאנשים להגיב ולשתף יותר, מה שמשאיר אותם בפלטפורמה."}, {text:"בגלל שיש תקלה במערכות הבינה המלאכותית שלהם", isCorrect:false, rationale:"זו אינה תקלה, אלא תכנון מכוון למקסום רווחים."}, {text:"כי משתמשים מחפשים רק חדשות פוליטיות", isCorrect:false, rationale:"משתמשים מחפשים דברים רבים, האלגוריתם דוחף קיצוניות."}] }
+                    { question: "על איזו הנחת יסוד מבוסס מודל הרווח של הרשתות החברתיות?", options: [{text:"זמן שהייה ארוך באפליקציה מוביל לחשיפה לפרסומות ולהגדלת רווחים", isCorrect:true}, {text:"גביית דמי מנוי חודשיים ממשתמשים קבועים", isCorrect:false}, {text:"מכירת מידע אישי וסודי לממשלות", isCorrect:false}] },
+                    { question: "לשם מה נועדו ה'התראות הקופצות' וה'לייקים'?", options: [{text:"לעורר שחרור דופמין שישאיר אותנו מחוברים", isCorrect:true}, {text:"להקל על המשתמש למצוא תוכן חינוכי ברשת", isCorrect:false}, {text:"להתריע על סוללה חלשה במכשיר", isCorrect:false}] },
+                    { question: "מדוע האלגוריתמים נוטים לקדם תוכן קיצוני ומעורר זעם?", options: [{text:"כי תוכן כזה מייצר רמת מעורבות גבוהה ולוכד את העין", isCorrect:true}, {text:"בגלל שיש תקלה מובנית במערכות הבינה המלאכותית", isCorrect:false}, {text:"משום שמשתמשים מחפשים באופן מודע רק חדשות פוליטיות", isCorrect:false}] },
+                    { question: "מה מוגדר בטקסט כמשאב היקר ביותר של חברות הטכנולוגיה?", options: [{text:"תשומת הלב שלנו", isCorrect:true}, {text:"נפט וזהב", isCorrect:false}, {text:"כוח עבודה זול", isCorrect:false}] },
+                    { question: "מהי ההשפעה הקוגניטיבית השלילית המוזכרת בטקסט?", options: [{text:"ירידה מתמדת בטווח הקשב וביכולת להתרכז לאורך זמן", isCorrect:true}, {text:"פגיעה בזיכרון לטווח הארוך והקצר", isCorrect:false}, {text:"ירידה ביכולת הראייה", isCorrect:false}] }
                 ] 
             },
             "read-5": { 
-                id: "read-5", difficulty: "medium", title: "אשליית ריבוי המשימות (Multitasking)", icon: "🤹", 
+                id: "read-5", difficulty: "medium", title: "אשליית ריבוי המשימות", icon: "🤹", 
                 text: `בעולם העבודה המודרני, היכולת לבצע מספר משימות במקביל – מולטיטאסקינג – נחשבת לעיתים לכישור נחשק ולסימן ליעילות. אנו רגילים לענות למיילים בזמן פגישת זום, או להאזין לפודקאסט תוך כדי קריאת דוח מורכב. אולם, מחקרי מוח ופסיכולוגיה קוגניטיבית חושפים כי ריבוי משימות הוא למעשה אשליה. המוח האנושי אינו מסוגל לעבד במקביל שתי פעולות הדורשות קשב מודע; בפועל, הוא מבצע "קפיצות" מהירות מאוד (Task switching) בין המשימות.<br><br>כל "קפיצה" כזו גובה מס קוגניטיבי. הזמן הנדרש למוח להתפקס מחדש על המשימה המקורית לאחר הסחת דעת (כמו הצצה בהודעת וואטסאפ) יכול להגיע לעשרות שניות ואף לדקות. כתוצאה מכך, ריבוי משימות פוגע משמעותית ביעילות הכוללת. העובד מבזבז זמן רב יותר, נוטה לעשות פי שניים יותר טעויות במשימותיו, ואף חווה עלייה ניכרת ברמות הלחץ והשחיקה הנפשית (Burnout).<br><br>מומחי פרודוקטיביות ממליצים לשנות גישה ולעבור לשיטת "משימה יחידה" (Monotasking). הקדשת זמן קצוב וממוקד (כגון 25 דקות ללא הפרעות, בשיטת פומודורו) למטלה אחת בלבד, תוך השתקת התראות, מובילה להספק גבוה יותר, לתוצרים איכותיים יותר, ולתחושת סיפוק רבה יותר בסוף יום העבודה.`, 
                 quiz: [
-                    { question: "למה מתכוון הכותב באומרו שריבוי משימות הוא 'אשליה'?", options: [{text:"המוח אינו מבצע פעולות במקביל, אלא קופץ במהירות ביניהן", isCorrect:true, rationale:"המחקרים חושפים שהמוח האנושי לא באמת עושה דברים במקביל (קשב מודע), אלא עושה 'Task switching'."}, {text:"אנשים משקרים כשהם אומרים שהם עושים כמה דברים יחד", isCorrect:false, rationale:"הם לא משקרים, הם פשוט טועים בהבנת התהליך המוחי שלהם."}, {text:"שזהו כישור שנשים ניחנות בו אך גברים אינם יכולים לבצע", isCorrect:false, rationale:"הטקסט אינו מתייחס כלל להבדלים מגדריים."}] },
-                    { question: "מהו ה'מס הקוגניטיבי' שמשלמים על קפיצה בין משימות?", options: [{text:"בזבוז זמן וירידה במיקוד בעת החזרה למשימה המקורית", isCorrect:true, rationale:"לוקח למוח זמן להתפקס מחדש אחרי הסחת דעת, והיעילות נפגעת."}, {text:"תשלום כספי שהמעסיק גובה על חוסר יעילות", isCorrect:false, rationale:"מדובר במטפורה למאמץ שכלי, לא בכסף."}, {text:"פגיעה בראייה עקב בהייה במסכים רבים", isCorrect:false, rationale:"ראייה אינה מוזכרת בקשר למס הקוגניטיבי."}] },
-                    { question: "איזה פתרון מוצע בסוף המאמר לבעיית חוסר היעילות?", options: [{text:"עבודה על משימה אחת בלבד בכל פרק זמן (Monotasking)", isCorrect:true, rationale:"המומחים ממליצים על 'משימה יחידה' והשתקת התראות להגברת היעילות."}, {text:"פיטורי עובדים שלא מצליחים לבצע מולטיטאסקינג", isCorrect:false, rationale:"לא מוזכר פיטורים."}, {text:"האזנה לפודקאסטים תוך כדי העבודה כדי להישאר ערניים", isCorrect:false, rationale:"זה בדיוק הפוך מההמלצה להשתיק הסחות."}] }
+                    { question: "למה מתכוון הכותב באומרו שריבוי משימות הוא 'אשליה'?", options: [{text:"המוח אינו מעבד במקביל, אלא קופץ במהירות בין משימות", isCorrect:true}, {text:"אנשים פשוט משקרים למעסיק שהם עושים זאת", isCorrect:false}, {text:"מדובר בכישור המותנה גנטית רק לחלק מהאנשים", isCorrect:false}] },
+                    { question: "מהי המשמעות של 'מס קוגניטיבי' בטקסט?", options: [{text:"בזבוז הזמן והירידה במיקוד עקב החזרה למשימה המקורית", isCorrect:true}, {text:"תשלום כלכלי שהעובד נדרש לשלם על חוסר יעילות", isCorrect:false}, {text:"פגיעה פיזית בראייה עקב חשיפה למסכים שונים", isCorrect:false}] },
+                    { question: "איזה פתרון מציעים מומחי הפרודוקטיביות בסוף המאמר?", options: [{text:"שיטת משימה יחידה לפרק זמן קצוב וללא הסחות דעת", isCorrect:true}, {text:"פיטורי העובדים שאינם עומדים בקצב", isCorrect:false}, {text:"האזנה למוזיקה תוך כדי העבודה במקביל", isCorrect:false}] },
+                    { question: "על פי המחקרים המובאים בטקסט, מה קורה לכמות הטעויות של עובד המבצע ריבוי משימות?", options: [{text:"היא נוטה לגדול פי שניים", isCorrect:true}, {text:"היא נשארת זהה אך העבודה איטית יותר", isCorrect:false}, {text:"היא דווקא פוחתת כי העובד דרוך יותר", isCorrect:false}] },
+                    { question: "אילו השלכות נפשיות נגרמות מריבוי משימות?", options: [{text:"עלייה ברמות הלחץ והשחיקה הנפשית (Burnout)", isCorrect:true}, {text:"תחושת שעמום ודיכאון קל", isCorrect:false}, {text:"ניתוק רגשי מתחושת העבודה בצוות", isCorrect:false}] }
                 ] 
             },
             "read-6": { 
                 id: "read-6", difficulty: "medium", title: "עירוניות ירוקה וקיימות", icon: "🏙️", 
                 text: `עד שנת 2050, צפויים כ-68% מאוכלוסיית העולם להתגורר בערים. תהליך העיור המואץ (אורבניזציה) מביא עמו אתגרים אקולוגיים עצומים: זיהום אוויר מתחבורה, יצירת "איי חום עירוניים" (אזורים בעיר שחמים משמעותית מסביבתם בשל עודף אספלט ובטון), ועומס כבד על תשתיות המים והחשמל. בתגובה למשבר זה, אדריכלים ומתכנני ערים מקדמים כיום את מודל "העיר הירוקה" או "העיר הבר-קיימא".<br><br>מודל זה דוגל בשילוב רחב של טבע בתוך המרחב העירוני. הוא כולל נטיעת עצים מסיבית ברחובות, הקמת פארקים, ואף יצירת "גגות ירוקים" וקירות ורטיקליים המכוסים בצמחייה. הצמחייה העירונית אינה רק פריט עיצובי; היא סופחת פחמן דו-חמצני, מסננת רעלים מהאוויר, ומספקת צל המפחית את הטמפרטורה המקומית.<br><br>כמו כן, ערים ירוקות נותנות עדיפות ברורה לתחבורה ציבורית יעילה, לשבילי אופניים ולהולכי רגל, על פני רכבים פרטיים מזהמים. גישה זו לא רק משפרת את איכות הסביבה ומתמודדת עם משבר האקלים, אלא גם הוכחה כמעלה את איכות החיים, הבריאות הפיזית ואף את המצב הנפשי של תושבי העיר.`, 
                 quiz: [
-                    { question: "מהי תופעת 'איי חום עירוניים' המוזכרת בטקסט?", options: [{text:"אזורים בעיר שחמים יותר מסביבתם עקב עודף בטון ואספלט", isCorrect:true, rationale:"הטקסט מסביר שהבטון סופח חום ויוצר 'אי' חם יותר מחוץ לעיר."}, {text:"איים טרופיים שנבנים במיוחד עבור תושבי ערים", isCorrect:false, rationale:"מדובר בתופעה אקלימית בעיר, לא באי גיאוגרפי אמיתי."}, {text:"אזורי תעשייה שמייצרים חשמל מחום השמש", isCorrect:false, rationale:"התופעה אינה קשורה לייצור חשמל."}] },
-                    { question: "מלבד יופי, מהו התפקיד הפונקציונלי של 'גגות ירוקים' וצמחייה בעיר?", options: [{text:"סינון אוויר, ספיחת פחמן והורדת הטמפרטורה", isCorrect:true, rationale:"הצמחייה מתוארת ככלי פונקציונלי לספינון רעלים ולקירור."}, {text:"אספקת מזון לכלל תושבי העיר בחינם", isCorrect:false, rationale:"לא מדובר על חקלאות עירונית למזון בטקסט."}, {text:"מניעת רעש של מטוסים", isCorrect:false, rationale:"מניעת רעש לא הוזכרה כיעד מרכזי של הגגות הירוקים."}] },
-                    { question: "לאיזה סוג תחבורה נותנות הערים הירוקות עדיפות?", options: [{text:"לתחבורה ציבורית, אופניים והליכה ברגל", isCorrect:true, rationale:"המודל מעדיף חלופות ירוקות על פני רכבים פרטיים."}, {text:"לרכבים פרטיים גדולים ובטוחים יותר", isCorrect:false, rationale:"זהו הגורם המזהם שהעיר הירוקה מנסה לצמצם."}, {text:"לרכבים מעופפים המופעלים בגז", isCorrect:false, rationale:"לא הוזכר מדע בדיוני."}] }
+                    { question: "מהי תופעת 'איי חום עירוניים' המוסברת בטקסט?", options: [{text:"אזורים בעיר שחמים יותר מסביבתם בשל עודף בטון ואספלט", isCorrect:true}, {text:"איים טרופיים שנבנים במיוחד לרווחת תושבי הערים", isCorrect:false}, {text:"אזורי תעשייה המייצרים חשמל מחום השמש", isCorrect:false}] },
+                    { question: "מלבד האסתטיקה, מהו התפקיד הפונקציונלי של גגות ירוקים?", options: [{text:"הם סופחים פחמן, מסננים אוויר ומורידים טמפרטורה", isCorrect:true}, {text:"הם משמשים מקור מרכזי למזון עבור תושבי העיר", isCorrect:false}, {text:"הם משמשים לבידוד מרעשי מטוסים בלבד", isCorrect:false}] },
+                    { question: "לאילו אמצעי תחבורה נותנות הערים הירוקות עדיפות?", options: [{text:"תחבורה ציבורית, שבילי אופניים והולכי רגל", isCorrect:true}, {text:"רכבים פרטיים גדולים המצמצמים פקקים", isCorrect:false}, {text:"תחבורה תת-קרקעית המבוססת על פחם", isCorrect:false}] },
+                    { question: "מהו אחוז האוכלוסייה הצפוי לגור בערים עד שנת 2050?", options: [{text:"כ-68%", isCorrect:true}, {text:"כ-50%", isCorrect:false}, {text:"מעל 90%", isCorrect:false}] },
+                    { question: "על פי סוף הטקסט, הגישה הירוקה בעיר תורמת ל:", options: [{text:"שיפור הבריאות הפיזית והמצב הנפשי של התושבים", isCorrect:true}, {text:"הוזלת מחירי הדיור בצורה משמעותית", isCorrect:false}, {text:"הקמת בניינים גבוהים וצפופים יותר", isCorrect:false}] }
                 ] 
             },
             "read-7": { 
                 id: "read-7", difficulty: "hard", title: "דטרמיניזם טכנולוגי מול הבנייה חברתית", icon: "🌐", 
                 text: `שאלת יחסי הגומלין בין הטכנולוגיה לחברה מעסיקה סוציולוגים ופילוסופים למעלה ממאה שנים. גישה אחת, המכונה "דטרמיניזם טכנולוגי", גורסת כי ההתפתחות הטכנולוגית היא הכוח המניע הבלעדי של ההיסטוריה. על פי גישה זו, ממציאים ממציאים כלים (כמו הדפוס, מנוע הקיטור או האינטרנט) מתוך תהליך מדעי אובייקטיבי, וכלים אלו בתורם "מכתיבים" לחברה כיצד להתנהג, לשנות את המבנה הכלכלי שלה ולעצב את תרבותה מחדש. האדם, לפי תפיסה רדיקלית זו, הוא כלי שרת בידי הקידמה הטכנולוגית שאינה ניתנת לעצירה.<br><br>מנגד, ניצבת גישת ה"הבנייה החברתית של הטכנולוגיה" (SCOT). חוקרי גישה זו הופכים את המשוואה וטוענים כי החברה היא זו שמפסלת את הטכנולוגיה. לטענתם, טכנולוגיה לעולם אינה מתפתחת בוואקום; היא תוצר של כוחות פוליטיים, צרכים כלכליים, וקונפליקטים בין קבוצות אינטרס (Stakeholders) שונות. המצאה תצליח ותוטמע בחברה רק אם היא משרתת אידיאולוגיה או צורך חברתי של קבוצה הגמונית.<br><br>דוגמה קלאסית להמחשת הוויכוח היא המכונית הפרטית. הדטרמיניסט יטען שהמצאת המנוע הובילה בהכרח להתפתחות הפרברים ולפירוק הקהילה הצפופה. לעומתו, חוקר ההבנייה החברתית יוכיח כי לובי מפעלי הרכב ותעשיית הנפט הם אלו שלחצו ועיצבו מראש מדיניות ממשלתית לסלילת כבישים על חשבון רכבות, כלומר - הפוליטיקה עיצבה את ניצחון המכונית.`, 
                 quiz: [
-                    { question: "מהי טענת הליבה של גישת ה'דטרמיניזם הטכנולוגי'?", options: [{text:"הטכנולוגיה מתפתחת באופן עצמאי והיא שמכתיבה ומעצבת את פני החברה והכלכלה.", isCorrect:true, rationale:"הדטרמיניזם גורס שהטכנולוגיה היא הכוח המניע שאינו תלוי בדבר ומשנה את החברה."}, {text:"החברה האנושית שולטת לחלוטין בטכנולוגיה וקובעת מראש מה יומצא.", isCorrect:false, rationale:"זוהי טענת הגישה הנגדית (הבנייה חברתית)."}, {text:"הטכנולוגיה נועדה אך ורק לשרת את בעלי ההון והפוליטיקאים.", isCorrect:false, rationale:"הדטרמיניזם רואה את הטכנולוגיה כאובייקטיבית ובלתי תלויה בפוליטיקה."}] },
-                    { question: "על פי גישת ההבנייה החברתית (SCOT), מדוע המצאה מסוימת מצליחה בעוד אחרת נכשלת?", options: [{text:"הצלחתה תלויה בצרכים פוליטיים, כלכליים ובקבוצות האינטרס השולטות באותה תקופה.", isCorrect:true, rationale:"הגישה טוענת שהטכנולוגיה היא תוצר של קונפליקטים בין קבוצות בחברה."}, {text:"המצאה מצליחה אך ורק אם היא עליונה ויעילה יותר מבחינה הנדסית-אובייקטיבית.", isCorrect:false, rationale:"זהו טיעון דטרמיניסטי."}, {text:"מדובר בתהליך אקראי לחלוטין שאינו תלוי בחברה או בטכנולוגיה.", isCorrect:false, rationale:"ההבנייה החברתית טוענת ליד מכוונת של כוחות חברתיים, לא לאקראיות."}] },
-                    { question: "כיצד יסביר חוקר גישת ההבנייה החברתית את ניצחון המכונית הפרטית?", options: [{text:"על ידי הצבעה על הלחץ הפוליטי של תעשיות הרכב והנפט שעיצבו את המדיניות.", isCorrect:true, rationale:"הוא לא יראה את המנוע כגורם הסיבתי העליון, אלא את קבוצות האינטרס שדחפו אותו."}, {text:"על ידי הוכחה שמנוע הבעירה הפנימית היה חזק יותר מהרכבת ולכן ניצח בהכרח.", isCorrect:false, rationale:"זהו הסבר הנדסי-דטרמיניסטי."}, {text:"הוא יטען שהמכונית מעולם לא ניצחה באמת את התחבורה הציבורית.", isCorrect:false, rationale:"הטקסט מכיר בניצחון המכונית, הוויכוח הוא על *הסיבה* לניצחון."}] }
+                    { question: "מהי טענת הליבה של גישת ה'דטרמיניזם הטכנולוגי'?", options: [{text:"הטכנולוגיה מתפתחת באופן עצמאי והיא שמכתיבה לחברה כיצד להתנהג", isCorrect:true}, {text:"החברה האנושית שולטת בטכנולוגיה ומכתיבה אותה מראש", isCorrect:false}, {text:"הטכנולוגיה נועדה לשרת אך ורק פוליטיקאים", isCorrect:false}] },
+                    { question: "על פי גישת ההבנייה החברתית (SCOT), מדוע המצאה מסוימת מצליחה?", options: [{text:"משום שהיא משרתת אידיאולוגיה או צורך של קבוצות אינטרס פוליטיות וכלכליות", isCorrect:true}, {text:"משום שהיא תמיד יעילה יותר מבחינה הנדסית ואובייקטיבית", isCorrect:false}, {text:"משום שזהו תהליך היסטורי אקראי לחלוטין שאינו ניתן לשליטה", isCorrect:false}] },
+                    { question: "כיצד יסביר חוקר ההבנייה החברתית את ניצחון המכונית הפרטית?", options: [{text:"כתוצר של לחץ פוליטי מצד תעשיות הרכב והנפט שעיצבו את המדיניות", isCorrect:true}, {text:"כהוכחה שמנוע המכונית היה פשוט חזק ואובייקטיבית טוב יותר מהרכבת", isCorrect:false}, {text:"הוא יטען שהמכונית מעולם לא ניצחה את הרכבת באמת", isCorrect:false}] },
+                    { question: "כיצד תופסת גישת הדטרמיניזם הטכנולוגי את מקומו של האדם מול הטכנולוגיה?", options: [{text:"כלי שרת בידי קידמה טכנולוגית שאינה ניתנת לעצירה", isCorrect:true}, {text:"האדם הוא הפסל והשולט הבלעדי בטכנולוגיה", isCorrect:false}, {text:"לאדם ולטכנולוגיה יש כוח שווה בדיוק", isCorrect:false}] },
+                    { question: "איזו דוגמה מובאת בטקסט להמצאה שחוללה שינוי לפי הדטרמיניסט?", options: [{text:"הדפוס, מנוע הקיטור והאינטרנט", isCorrect:true}, {text:"הרכבת החשמלית והמטוס", isCorrect:false}, {text:"שבילי אופניים עירוניים", isCorrect:false}] }
                 ] 
             },
             "read-8": { 
                 id: "read-8", difficulty: "hard", title: "אפקט הפלצבו ברפואה המודרנית", icon: "💊", 
                 text: `אפקט הפלצבו (תרופת סרק) מהווה את אחת התופעות הפסיכו-פיזיולוגיות המרתקות ביותר בחקר הרפואה. מדובר במצב שבו מטופל חווה הקלה ממשית בסימפטומים, או אף שיפור במדדים קליניים אובייקטיביים, לאחר נטילת תכשיר חסר כל מרכיב פעיל פרמקולוגית (כגון גלולת סוכר או תמיסת מי מלח). השיפור אינו נובע מהתרופה עצמה, אלא מאמונתו הבלתי-מודעת של המטופל ביעילות הטיפול ובסמכותו של הרופא המטפל.<br><br>מבחינה נוירוביולוגית, ציפייה לריפוי מעוררת תהליכים ממשיים במוח. מחקרי דימות (fMRI) חשפו כי מתן פלצבו מלווה בשחרור מוגבר של אופיואידים אנדוגניים (משככי כאב טבעיים שהגוף מייצר) ודופמין, אשר מפחיתים את תחושת הכאב באותה צורה שבה פועלות תרופות כימיות חזקות. עוצמת האפקט מושפעת מגורמים נסיבתיים רבים: גודל וצבע הגלולה, מחירה (גלולה יקרה נתפסת כיעילה יותר), והמידה שבה הרופא מקרין ביטחון ואמפתיה בעת מתן ה"טיפול".<br><br>ברפואה המבוססת על ראיות (EBM), אפקט הפלצבו נתפס לעיתים כמטרד סטטיסטי שאותו יש לבודד בעת ניסויים קליניים (באמצעות מחקר סמוי כפול). עם זאת, הוגים רפואיים עכשוויים קוראים לא לראות בו "שקר", אלא רכיב לגיטימי של אומנות הריפוי. לטענתם, טיפוח הקשר בין הרופא למטופל והעצמת ציפיות הריפוי יכולים וצריכים לשמש ככלי טיפולי משלים התורם להחלמה, לצד התרופות הביו-כימיות.`, 
                 quiz: [
-                    { question: "ממה נובע השיפור במצבו של המטופל המקבל פלצבו?", options: [{text:"מאמונתו של המטופל בטיפול וברופא, שמעוררת תהליכים פיזיולוגיים במוח", isCorrect:true, rationale:"האמונה גורמת להפרשת משככי כאבים טבעיים (אופיואידים ודופמין)."}, {text:"מהמרכיבים הכימיים הסודיים המצויים בגלולת הסוכר עצמה", isCorrect:false, rationale:"ההגדרה של פלצבו היא שהגלולה ריקה ממרכיב פעיל."}, {text:"מחוסר תשומת לב של המטופל לכאב בגלל עיסוקו בבליעת הכדור", isCorrect:false, rationale:"השיפור אינו רק הסחת דעת, אלא תהליך נוירוביולוגי מוכח."}] },
-                    { question: "איזה גורם **אינו** משפיע על עוצמת אפקט הפלצבו, על פי הכתוב?", options: [{text:"סוג החומר הכימי הפעיל שנמצא בתוך הגלולה", isCorrect:true, rationale:"שוב, בגלולת פלצבו אין מרכיב פעיל כימי, ולכן זהו לא גורם שמשפיע."}, {text:"הביטחון והאמפתיה שמשדר הרופא למטופל", isCorrect:false, rationale:"גורם זה מוזכר במפורש כמשפיע על עוצמת האפקט."}, {text:"צבעה, גודלה ומחירה הנתפס של גלולת הסרק", isCorrect:false, rationale:"נכתב שגלולה יקרה או צבעונית נתפסת כיעילה יותר ומגבירה את האפקט."}] },
-                    { question: "כיצד רואים 'הוגים רפואיים עכשוויים' את אפקט הפלצבו?", options: [{text:"ככלי טיפולי לגיטימי ומשלים המבוסס על קשר טוב עם המטופל", isCorrect:true, rationale:"בניגוד למי שרואים בו רק 'מטרד סטטיסטי', ההוגים טוענים שצריך לנצל אותו ככלי עזר לריפוי."}, {text:"כמטרד סטטיסטי שיש להכחיד לחלוטין מכל טיפול רפואי", isCorrect:false, rationale:"כך הוא נתפס בבדיקות קליניות (EBM), אך זו לא עמדת ה'הוגים העכשוויים'."}, {text:"כהונאה אתית שאסור לרופאים בשום אופן להשתמש בה", isCorrect:false, rationale:"הם קוראים לא לראות בו שקר אלא אומנות ריפוי."}] }
+                    { question: "ממה נובע השיפור הקליני במטופל המקבל פלצבו?", options: [{text:"מציפייתו ומאמונתו של המטופל, המעוררות תהליכים פיזיולוגיים במוח", isCorrect:true}, {text:"מהמרכיבים הכימיים הסודיים המצויים בגלולת הפלצבו", isCorrect:false}, {text:"מחוסר תשומת לב זמנית לכאב בגלל עיסוקו של המטופל בבליעה", isCorrect:false}] },
+                    { question: "איזה גורם מהבאים אינו משפיע על עוצמת אפקט הפלצבו, על פי הכתוב?", options: [{text:"החומר הכימי הפעיל המצוי בתוך הגלולה", isCorrect:true}, {text:"הביטחון והאמפתיה שמשדר הרופא", isCorrect:false}, {text:"גודל הגלולה, צבעה ומחירה הנתפס", isCorrect:false}] },
+                    { question: "כיצד מתייחסים הוגים רפואיים עכשוויים לאפקט הפלצבו?", options: [{text:"ככלי טיפולי משלים ולגיטימי, הנשען על אומנות הריפוי והקשר עם המטופל", isCorrect:true}, {text:"כמטרד סטטיסטי גרידא שיש להכחיד לחלוטין מכל טיפול רפואי", isCorrect:false}, {text:"כהונאה אתית מוחלטת שאסור בתכלית האיסור לרופאים להשתמש בה", isCorrect:false}] },
+                    { question: "מה נחשף במחקרי דימות (fMRI) בנוגע לפלצבו?", options: [{text:"שחרור מוגבר של משככי כאב טבעיים במוח כגון אופיואידים ודופמין", isCorrect:true}, {text:"התרחבות פיזית של תאי העצב בחוט השדרה בלבד", isCorrect:false}, {text:"שהמוח כלל אינו מגיב לפלצבו אלא רק מערכת העיכול", isCorrect:false}] },
+                    { question: "כיצד נתפס הפלצבו במסגרת של 'רפואה המבוססת על ראיות' (EBM)?", options: [{text:"לעיתים כמטרד סטטיסטי שיש לבודד אותו בניסויים קליניים", isCorrect:true}, {text:"ככלי הריפוי החשוב והמיידי ביותר לפני מתן תרופות כימיות", isCorrect:false}, {text:"כתרופת הפלא למחלות חשוכות מרפא", isCorrect:false}] }
                 ] 
             },
             "read-9": { 
-                id: "read-9", difficulty: "hard", title: "שחיקת מעמד האמת בעידן ה'פוסט-אמת'", icon: "🕵️", 
+                id: "read-9", difficulty: "hard", title: "עידן ה'פוסט-אמת'", icon: "🕵️", 
                 text: `אנו ניצבים בעיצומו של עידן המוגדר על ידי סוציולוגים כעידן ה"פוסט-אמת" (Post-truth). זהו אקלים תרבותי ופוליטי שבו עובדות אובייקטיביות ונתונים מדעיים מאבדים מכוחם בעיצוב דעת הקהל, ואת מקומם תופסים פניות לרגש, אמונות אישיות וקונספירציות. תהליך זה אינו תוצר אקראי, אלא מואץ בצורה חסרת תקדים על ידי הארכיטקטורה של הרשתות החברתיות, אשר מתגמלות כלכלית הפצה של מידע ויראלי - בין אם הוא נכון או שקרי לחלוטין.<br><br>הפצת "פייק ניוז" (חדשות כזב) פוגעת באחד היסודות העמוקים ביותר של הדמוקרטיה: היכולת של אזרחים לקיים דיון ציבורי מבוסס על תשתית עובדתית משותפת. כאשר כל קבוצה חברתית צורכת מידע בתוך "תיבת תהודה" (Echo chamber) משלה, המסננת החוצה דעות מנוגדות ומאשררת שוב ושוב את דעותיה הקדומות, החברה מאבדת את שפתה המשותפת. הקיטוב מעמיק, והאמון במוסדות מסורתיים – כמו העיתונות הכתובה, האקדמיה והמערכת המשפטית – נשחק עד דק.<br><br>ההתמודדות עם משבר זה דורשת מאמץ מערכתי כפול. מצד אחד, חינוך הציבור ל"אוריינות תקשורתית" – היכולת לקרוא טקסט בעין ביקורתית, לבדוק מקורות ולזהות הטיות סמויות. מצד שני, רגולציה קפדנית יותר על ענקיות הטכנולוגיה, שתדרוש מהן שקיפות אלגוריתמית ולקיחת אחריות חוקית על הפצת מידע דיסאינפורמטיבי פוגעני במסגרת הפלטפורמות שלהן.`, 
                 quiz: [
-                    { question: "מה מאפיין את עידן ה'פוסט-אמת' על פי הטקסט?", options: [{text:"רגשות ואמונות אישיות משפיעים על דעת הקהל יותר מאשר עובדות אובייקטיביות", isCorrect:true, rationale:"הפתיח מגדיר במדויק שהעובדות מאבדות מכוחן לטובת פניות לרגש ואמונות אישיות."}, {text:"הציבור חשוף ליותר מדי עובדות מדעיות מורכבות שמקשות על קבלת החלטות", isCorrect:false, rationale:"הבעיה אינה עודף עובדות, אלא חוסר התייחסות לעובדות."}, {text:"העיתונות המסורתית השתלטה על הרשתות החברתיות ומכתיבה את סדר היום", isCorrect:false, rationale:"הטקסט אומר בדיוק ההפך: האמון בעיתונות המסורתית נשחק."}] },
-                    { question: "מהי המשמעות המטאפורית של 'תיבת תהודה' (Echo chamber)?", options: [{text:"סביבה שבה המשתמש נחשף רק לדעות הדומות לשלו, המחזקות את אמונותיו הקדומות", isCorrect:true, rationale:"תיבת תהודה מסננת דעות מנוגדות ומהדהדת רק את מה שהמשתמש כבר מאמין בו."}, {text:"מערכת טכנולוגית שמאפשרת לפוליטיקאים לדבר ישירות עם הבוחרים בלי צנזורה", isCorrect:false, rationale:"זו אינה ההגדרה. מדובר על צריכת המידע של המשתמש הרגיל."}, {text:"רמקול חכם ששואב מידע אישי מהבתים של האזרחים למטרות פרסום", isCorrect:false, rationale:"זה פירוש מילולי שגוי שאינו קשור להקשר הסוציולוגי."}] },
-                    { question: "איזה צעד **אינו** נכלל בהצעות הכותב להתמודדות עם משבר האמון?", options: [{text:"סגירה מוחלטת של כל הרשתות החברתיות על ידי הממשלות", isCorrect:true, rationale:"הכותב מציע רגולציה וחינוך, אך לא מצדד בצעד טוטליטרי של סגירת רשתות מוחלטת."}, {text:"פיתוח אוריינות תקשורתית וקריאה ביקורתית של טקסטים במערכת החינוך", isCorrect:false, rationale:"צעד זה מוזכר במפורש (חינוך לאוריינות תקשורתית)."}, {text:"הטלת אחריות משפטית וחובת שקיפות על חברות הטכנולוגיה", isCorrect:false, rationale:"צעד זה מוזכר במפורש (רגולציה ושקיפות אלגוריתמית)."}] }
+                    { question: "מהו המאפיין המרכזי של אקלים ה'פוסט-אמת' על פי הטקסט?", options: [{text:"רגש ואמונות אישיות משפיעים על דעת הקהל יותר מעובדות אובייקטיביות", isCorrect:true}, {text:"עודף של עובדות מדעיות מורכבות שמקשות על הבנת המציאות", isCorrect:false}, {text:"שליטה מוחלטת של העיתונות המסורתית על סדר היום", isCorrect:false}] },
+                    { question: "מהי המשמעות המטאפורית של 'תיבת תהודה' (Echo chamber)?", options: [{text:"סביבה שבה המשתמש נחשף רק לדעות המחזקות את אמונותיו הקדומות תוך סינון דעות מנוגדות", isCorrect:true}, {text:"מערכת טכנולוגית שמאפשרת לפוליטיקאים לנאום ללא כל צנזורה ציבורית", isCorrect:false}, {text:"מכשיר האזנה ששואב מידע מהבתים למטרות פרסומות ממוקדות", isCorrect:false}] },
+                    { question: "איזה צעד אינו מוזכר בטקסט כחלק מההתמודדות עם משבר האמון?", options: [{text:"סגירה מוחלטת של הרשתות החברתיות על ידי הממשלות", isCorrect:true}, {text:"חינוך הציבור הרחב לאוריינות תקשורתית וקריאה ביקורתית", isCorrect:false}, {text:"הטלת רגולציה קפדנית ושקיפות אלגוריתמית על חברות הטכנולוגיה", isCorrect:false}] },
+                    { question: "כיצד משפיעה ה'ארכיטקטורה של הרשתות החברתיות' על עידן זה?", options: [{text:"היא מתגמלת כלכלית הפצת מידע ויראלי בלי קשר לאמיתותו", isCorrect:true}, {text:"היא חוסמת באופן אוטומטי כל מידע שאינו נתמך מדעית", isCorrect:false}, {text:"היא מונעת היווצרות של תיאוריות קונספירציה", isCorrect:false}] },
+                    { question: "על פי הטקסט, אילו מוסדות סובלים משחיקת האמון הציבורי בהם בעקבות התהליך?", options: [{text:"העיתונות הכתובה, האקדמיה והמערכת המשפטית", isCorrect:true}, {text:"חברות הטכנולוגיה עצמן ואפליקציות התוכן בלבד", isCorrect:false}, {text:"מוסדות הבריאות והבנקים בלבד", isCorrect:false}] }
                 ] 
             }
         };
 
         // ==========================================
-        // 4. MEGA QUIZ QUESTION POOL (FOR HARD DIFFICULTY/DEGREE LEVEL)
+        // 4. MEGA QUIZ POOL (SEPARATE FROM MODULES)
+        // Easy=15, Medium=20, Hard=25
+        // Total = 60 Unique Questions
         // ==========================================
         const megaQuizPool = [
-            // EASY (15)
-            { difficulty: "easy", category: "דקדוק - כללי", question: "מה השורש של <b>בָּכָה</b>?", options: [{text:"ב-כ-ה", isCorrect:true, rationale:"מסתיים ב-ה' -> נל\"י/ה."}, {text:"ב-כ-א", isCorrect:false}, {text:"ב-ו-כ", isCorrect:false}] },
-            { difficulty: "easy", category: "דקדוק - כללי", question: "מה השורש של <b>טָס</b>?", options: [{text:"ט-ו-ס", isCorrect:true, rationale:"שם פועל לטוס."}, {text:"ט-ס-ס", isCorrect:false}, {text:"י-ט-ס", isCorrect:false}] },
-            { difficulty: "easy", category: "דקדוק - כללי", question: "מה השורש של <b>יָשַׁב</b>?", options: [{text:"י-ש-ב", isCorrect:true, rationale:"צורת עבר."}, {text:"ו-ש-ב", isCorrect:false}, {text:"ש-י-ב", isCorrect:false}] },
-            { difficulty: "easy", category: "דקדוק - כללי", question: "מה השורש של <b>נָסַע</b>?", options: [{text:"נ-ס-ע", isCorrect:true, rationale:"נ' מופיעה בעבר."}, {text:"ס-ו-ע", isCorrect:false}, {text:"ס-ע-ע", isCorrect:false}] },
-            { difficulty: "easy", category: "שם המספר", question: "איך אומרים נקבה של 3?", options: [{text:"שָׁלוֹשׁ", isCorrect:true, rationale:"בלי ה'."}, {text:"שְׁלוֹשָׁה", isCorrect:false}, {text:"שְׁלִישִׁי", isCorrect:false}] },
-            { difficulty: "easy", category: "שם המספר", question: "איך אומרים 10 שקלים?", options: [{text:"עֲשָׂרָה שקלים", isCorrect:true, rationale:"שקל זה זכר."}, {text:"עֶשֶׂר שקלים", isCorrect:false}, {text:"עֲשִׂירִי שקלים", isCorrect:false}] },
-            { difficulty: "easy", category: "תצורת השם", question: "המילה רַמְזוֹר היא דוגמה ל:", options: [{text:"הלחם בסיסים", isCorrect:true, rationale:"רמז+אור."}, {text:"שורש ומשקל", isCorrect:false}, {text:"ראשי תיבות", isCorrect:false}] },
-            { difficulty: "easy", category: "דקדוק - כללי", question: "מה השורש של המילה מִשְׁמָר?", options: [{text:"ש-מ-ר", isCorrect:true, rationale:"שורש שלם וגלוי."}, {text:"מ-ש-ר", isCorrect:false}, {text:"מ-ר-ר", isCorrect:false}] },
-            { difficulty: "easy", category: "דקדוק - נל\"א", question: "באיזו מילה ה-א' שותקת?", options: [{text:"מָצָא", isCorrect:true, rationale:"בסוף מילה הא' נחה."}, {text:"אָמַר", isCorrect:false}, {text:"אָכַל", isCorrect:false}] },
-            { difficulty: "easy", category: "דקדוק - כללי", question: "השורש נ-צ-ל בבניין הפעיל עבר:", options: [{text:"הִצִּיל", isCorrect:true, rationale:"נ' נופלת, דגש ב-צ'."}, {text:"הִנְצִיל", isCorrect:false}, {text:"הִצְלִיל", isCorrect:false}] },
-            
-            // MEDIUM (15)
-            { difficulty: "medium", category: "דקדוק - נעו\"י", question: "מה השורש של מֵבִין?", options: [{text:"ב-י-נ", isCorrect:true, rationale:"שם פועל להבין -> ב-י-נ."}, {text:"מ-ב-נ", isCorrect:false}, {text:"ה-ב-נ", isCorrect:false}] },
-            { difficulty: "medium", category: "דקדוק - נפי/ו", question: "איך אומרים ציווי של י-ר-ד (אתה)?", options: [{text:"רֵד", isCorrect:true, rationale:"ה-י' נופלת בציווי קל."}, {text:"תֵּרֵד", isCorrect:false}, {text:"יְרַד", isCorrect:false}] },
-            { difficulty: "medium", category: "שם המספר", question: "איך נאמר: ב-1 בחודש?", options: [{text:"בָּאֶחָד בחודש", isCorrect:true, rationale:"תאריכים בזכר."}, {text:"בְּאַחַת בחודש", isCorrect:false}, {text:"בָּרִאשׁוֹן בחודש", isCorrect:false}] },
-            { difficulty: "medium", category: "תצורת השם", question: "איך נוצרה המילה חַשְׁמַלַּאי?", options: [{text:"בסיס + צורן סופי", isCorrect:true, rationale:"חשמל + אי."}, {text:"הלחם בסיסים", isCorrect:false}, {text:"שורש ומשקל", isCorrect:false}] },
-            { difficulty: "medium", category: "דקדוק - חפ\"נ", question: "מה השורש של הִגִּישׁ?", options: [{text:"נ-ג-ש", isCorrect:true, rationale:"דגש ב-ג'."}, {text:"ה-ג-ש", isCorrect:false}, {text:"ג-ו-ש", isCorrect:false}] },
-            { difficulty: "medium", category: "דקדוק - נעו\"י", question: "מה הבניין של הוּבַן?", options: [{text:"הופעל", isCorrect:true, rationale:"תחילית הו בהופעל נעו\"י."}, {text:"הפעיל", isCorrect:false}, {text:"נפעל", isCorrect:false}] },
-            { difficulty: "medium", category: "דקדוק - נל\"י/ה", question: "מה השורש של מְגַלֶּה?", options: [{text:"ג-ל-ה", isCorrect:true, rationale:"הוא אתמול גילה."}, {text:"ג-ל-ל", isCorrect:false}, {text:"מ-ג-ל", isCorrect:false}] },
-            { difficulty: "medium", category: "דקדוק - נל\"א", question: "איזו מילה אינה שייכת לגזרת נל\"א?", options: [{text:"קָנָה", isCorrect:true, rationale:"נל\"י/ה."}, {text:"חָבָא", isCorrect:false}, {text:"מָצָא", isCorrect:false}] },
-            { difficulty: "medium", category: "שם המספר", question: "איך אומרים 12 בנות?", options: [{text:"שְׁתֵּים עֶשְׂרֵה", isCorrect:true, rationale:"נקבה."}, {text:"שְׁנֵים עָשָׂר", isCorrect:false}, {text:"שְׁתֵּי עֶשְׂרֵה", isCorrect:false}] },
-            { difficulty: "medium", category: "דקדוק - נפי/ו", question: "מה הבניין של נוֹלַד?", options: [{text:"נפעל", isCorrect:true, rationale:"תחילית נו."}, {text:"קל", isCorrect:false}, {text:"הופעל", isCorrect:false}] },
+            // MEGA-MEDIUM (15 Questions)
+            { difficulty: "mega-medium", category: "בגרות", question: "השורש של הִרְגִּיל:", options: [{text:"ר-ג-ל", isCorrect:true}, {text:"ה-ר-ג", isCorrect:false}, {text:"ג-י-ל", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "שם המספר: 5 כוסות:", options: [{text:"חָמֵשׁ", isCorrect:true}, {text:"חֲמִשָּׁה", isCorrect:false}, {text:"חֲמִישִׁית", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "תצורת השם מַחְשֵׁב:", options: [{text:"שורש ומשקל", isCorrect:true}, {text:"בסיס וצורן", isCorrect:false}, {text:"הלחם", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "השורש של מַנְהִיג:", options: [{text:"נ-ה-ג", isCorrect:true}, {text:"ה-ג-ה", isCorrect:false}, {text:"מ-נ-ה", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "הפועל מִתְנַגֵּב (בניין):", options: [{text:"התפעל", isCorrect:true}, {text:"פיעל", isCorrect:false}, {text:"נפעל", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "איזו מילה משורש י-ל-ד בנפעל?", options: [{text:"נוֹלַד", isCorrect:true}, {text:"הוֹלִיד", isCorrect:false}, {text:"יָלַד", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "שם הפועל של נ-ס-ע (קל):", options: [{text:"לִנְסֹעַ", isCorrect:true}, {text:"לָסַעַת", isCorrect:false}, {text:"לְהַסִּיעַ", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "קניתי 10 ספרים:", options: [{text:"עֲשָׂרָה", isCorrect:true}, {text:"עֶשֶׂר", isCorrect:false}, {text:"עֲשִׂירִי", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "רַמְזוֹר:", options: [{text:"הלחם בסיסים", isCorrect:true}, {text:"שורש ומשקל", isCorrect:false}, {text:"בסיס וצורן", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "מה השורש של סָבַבְתִּי?", options: [{text:"ס-ב-ב", isCorrect:true}, {text:"ס-ו-ב", isCorrect:false}, {text:"ס-ב-ת", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "באיזו גזרה מדובר? הֵקִים", options: [{text:"נעו\"י", isCorrect:true}, {text:"חפ\"נ", isCorrect:false}, {text:"נפי/ו", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "השורש של הִצִּיל:", options: [{text:"נ-צ-ל", isCorrect:true}, {text:"צ-י-ל", isCorrect:false}, {text:"ה-צ-ל", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "14 יום:", options: [{text:"אַרְבָּעָה עָשָׂר", isCorrect:true}, {text:"אַרְבַּע עֶשְׂרֵה", isCorrect:false}, {text:"אַרְבָּעָה עֶשְׂרֵה", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "הצורן ־וֹן במילה אווירון:", options: [{text:"הקטנה (או כלי טיס קטן במקור)", isCorrect:true}, {text:"אוסף", isCorrect:false}, {text:"תואר", isCorrect:false}] },
+            { difficulty: "mega-medium", category: "בגרות", question: "מהו הבניין של 'נִשְׁמַר'?", options: [{text:"נפעל", isCorrect:true}, {text:"פעל", isCorrect:false}, {text:"פיעל", isCorrect:false}] },
 
-            // HARD (DEGREE/ADVANCED LEVEL - 15)
-            { difficulty: "hard", category: "דקדוק - חריגים", question: "לפניך צמד פעלים: הִשְׁתַּגֵּעַ ו-הִשְׁתַּנָּה. מהו ההבדל המורפולוגי ביניהם?", options: [{text:"השתגע משורש שלמים (ש-ג-ע), השתנה מנל\"י/ה (ש-נ-ה)", isCorrect:true, rationale:"השתגע מסתיים בע' ולכן אינו נל\"י/ה. השתנה מסתיים בה' ונוהג כנל\"י/ה."}, {text:"השתגע מנל\"י/ה והשתנה משלמים", isCorrect:false}, {text:"שניהם מאותה גזרה (נל\"י/ה) אך מבניין שונה", isCorrect:false}] },
-            { difficulty: "hard", category: "דקדוק - ניתוח צורני", question: "מה קורה בצורת הציווי 'גֶּשֶׁת' (נ-ג-ש)?", options: [{text:"ה-נ' נופלת ויש סיומת ת', אך זו צורת שם פועל ולא ציווי!", isCorrect:true, rationale:"זה טריק ידוע. 'גשת' זה לָגֶשֶׁת ללא ה-ל' (מקור מוחלט/שם פועל). הציווי הוא גַּשׁ!"}, {text:"ה-נ' נופלת והיא ציווי לנקבה", isCorrect:false}, {text:"אין צורה כזו בעברית", isCorrect:false}] },
-            { difficulty: "hard", category: "שם המספר - חריגים", question: "איך אומרים את השנה 1948 במדויק?", options: [{text:"שנת אלף תשע מאות ארבעים ושמונה", isCorrect:true, rationale:"שנים תמיד נאמרות בנקבה, ולכן תשע, שמונה (ולא תשעה או שמונה בזכר)."}, {text:"שנת אלף תשעה מאות ארבעים ושמונה", isCorrect:false}, {text:"שנת אלף תשע מאות ארבעים ושמונָה", isCorrect:false}] },
-            { difficulty: "hard", category: "תצורת השם - דקויות", question: "המילה עַכְבְּרוֹשׁ נראית כמורכבת משורש ע-כ-ב-ר-ש. מהי האמת?", options: [{text:"זהו הלחם בסיסים (עכבר+ברוש או עכבר+ראש)", isCorrect:true, rationale:"השורש אינו מחומש, זוהי קלאסיקה של הלחם בסיסים מוסווה."}, {text:"היא משורש מרובע מורחב", isCorrect:false}, {text:"היא בסיס 'עכבר' וצורן סופי '-וש'", isCorrect:false}] },
-            { difficulty: "hard", category: "דקדוק - נפי/ו", question: "השורש י-נ-ק, בניין הפעיל, נקבה הווה (חריג):", options: [{text:"מֵינִיקָה", isCorrect:true, rationale:"זהו אחד השורשים בהם הי' אינה הופכת לו' בהפעיל. (מיטיבה, מיניקה)."}, {text:"מוֹנִיקָה", isCorrect:false}, {text:"מַנְיִיקָה", isCorrect:false}] },
-            { difficulty: "hard", category: "דקדוק - נעו\"י", question: "מה הבניין והשורש של הוּרְאָה (הוצג)?", options: [{text:"הופעל (משורש ר-א-ה, נל\"י/ה)", isCorrect:true, rationale:"זה נראה כמו נעו\"י בגלל ה'הו', אך השורש הוא ראה, וזהו בניין הופעל שהותאם."}, {text:"הפעיל", isCorrect:false}, {text:"הופעל, י-ר-ה", isCorrect:false}] },
-            { difficulty: "hard", category: "דקדוק - נל\"י/ה", question: "איך אומרים בעבר גוף היא לשורש ג-ל-ה בבניין קל?", options: [{text:"גָּלְתָה", isCorrect:true, rationale:"ה' הופכת ל-ת' בנסתרת עבר בגזרת נל\"י/ה (בנתה, גלתה, קנתה)."}, {text:"גָּלְיָה", isCorrect:false}, {text:"גִּלְּתָה", isCorrect:false}] },
-            { difficulty: "hard", category: "שם המספר", question: "קניתי __ משקפיים.", options: [{text:"שְׁנֵי זוגות", isCorrect:true, rationale:"משקפיים הם זכר זוגי. יש לומר שני זוגות."}, {text:"שְׁתֵּי זוגות", isCorrect:false}, {text:"שְׁנַיִם זוגות", isCorrect:false}] },
-            { difficulty: "hard", category: "דקדוק - נעו\"י", question: "מה הבניין המדויק של רוֹמֵם?", options: [{text:"פולל (מחליף פיעל)", isCorrect:true, rationale:"בגזרת נעו\"י אין פיעל רגיל כי אין אות אמצעית לדגוש. מחליפים זאת בהכפלת האחרונה (פולל)."}, {text:"קל מורחב", isCorrect:false}, {text:"התפעל", isCorrect:false}] },
-            { difficulty: "hard", category: "דקדוק - חפ\"נ", question: "איך אומרים ציווי 'אתה' של נ-ת-נ?", options: [{text:"תֵּן", isCorrect:true, rationale:"חפ\"נ חריג - נופלת גם הנ' הראשונה וגם הנ' האחרונה."}, {text:"נְתֵן", isCorrect:false}, {text:"תִּתֵּן", isCorrect:false}] }
+            // MEGA-HARD (20 Questions)
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "השורש של תִּבְנֶינָה:", options: [{text:"ב-נ-ה", isCorrect:true}, {text:"ב-נ-נ", isCorrect:false}, {text:"נ-ב-ה", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "תצורת השם עִתּוֹנַאי:", options: [{text:"בסיס וצורן סופי", isCorrect:true}, {text:"שורש ומשקל", isCorrect:false}, {text:"הלחם בסיסים", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "שנת 2024:", options: [{text:"אַלְפַּיִם עֶשְׂרִים וְאַרְבַּע", isCorrect:true}, {text:"אַלְפַּיִם עֶשְׂרִים וְאַרְבָּעָה", isCorrect:false}, {text:"שְׁנֵי אֲלָפִים עֶשְׂרִים וְאַרְבַּע", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "השורש של הֵבִין:", options: [{text:"ב-י-נ", isCorrect:true}, {text:"ב-ו-נ", isCorrect:false}, {text:"ה-ב-נ", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "מַגֶּבֶת (מגבת רחצה) שורש ומשקל:", options: [{text:"נ-ג-ב (מתנהג כחפ\"נ), מקטלת", isCorrect:true}, {text:"מ-ג-ב, מקטלת", isCorrect:false}, {text:"ג-ו-ב, מקטלת", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "מה ההבדל בין מְגַלֶּה ל-מַגְלֶה?", options: [{text:"מְגַלֶּה - פיעל, מַגְלֶה - הפעיל", isCorrect:true}, {text:"שניהם בהפעיל", isCorrect:false}, {text:"מְגַלֶּה הפעיל, מַגְלֶה פיעל", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "שם הפועל של י-כ-ל:", options: [{text:"לָכוֹל / לוּכַל", isCorrect:true}, {text:"לִיכֹּל", isCorrect:false}, {text:"לְהָכִיל", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "הפועל תִּקְרֶאנָה גזרה:", options: [{text:"נל\"א", isCorrect:true}, {text:"נל\"י/ה", isCorrect:false}, {text:"חפ\"נ", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "7 כיסאות:", options: [{text:"שִׁבְעָה", isCorrect:true}, {text:"שֶׁבַע", isCorrect:false}, {text:"שְׁבִיעִי", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "פי 8:", options: [{text:"פי שְׁמוֹנָה", isCorrect:true}, {text:"פי שְׁמוֹנֶה", isCorrect:false}, {text:"פי שְׁמוֹנַת", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "בניין פולל (נעו\"י) מקביל לבניין:", options: [{text:"פיעל", isCorrect:true}, {text:"נפעל", isCorrect:false}, {text:"הפעיל", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "מה השורש של תּוֹשִׁיב?", options: [{text:"י-ש-ב", isCorrect:true}, {text:"ש-ו-ב", isCorrect:false}, {text:"ו-ש-ב", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "השורש של הֻפַּל:", options: [{text:"נ-פ-ל", isCorrect:true}, {text:"פ-י-ל", isCorrect:false}, {text:"ה-פ-ל", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "מה התצורה של מחשבון?", options: [{text:"מחשב + ון (בסיס וצורן)", isCorrect:true}, {text:"שורש ח-ש-ב, משקל מפעילון", isCorrect:false}, {text:"הלחם", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "שורש נִמְצֵאת:", options: [{text:"מ-צ-א", isCorrect:true}, {text:"מ-צ-ה", isCorrect:false}, {text:"נ-מ-צ", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "מה השורש של אֶסַּע (אני בעתיד)?", options: [{text:"נ-ס-ע", isCorrect:true}, {text:"ס-ו-ע", isCorrect:false}, {text:"ס-ע-ע", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "איך אומרים בעבר אתן בנפעל ק-ר-א?", options: [{text:"נִקְרֵאתֶן", isCorrect:true}, {text:"נִקְרָאתֶן", isCorrect:false}, {text:"נִקְרִיתֶן", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "מה השורש של מְרוֹמֵם?", options: [{text:"ר-ו-ם", isCorrect:true}, {text:"ר-מ-מ", isCorrect:false}, {text:"מ-ר-ם", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "21 שולחנות:", options: [{text:"עֶשְׂרִים וְאֶחָד", isCorrect:true}, {text:"עֶשְׂרִים וְאַחַת", isCorrect:false}, {text:"עֶשְׂרִים וְאֶחָדוֹת", isCorrect:false}] },
+            { difficulty: "mega-hard", category: "בגרות מתקדם", question: "משקל מִקְטָלָה לרוב מציין:", options: [{text:"מקומות", isCorrect:true}, {text:"מחלות", isCorrect:false}, {text:"בעלי מקצוע", isCorrect:false}] },
+
+            // MEGA-DEGREE (25 Questions)
+            { difficulty: "mega-degree", category: "אקדמיה", question: "השורש והבניין של הוּרְאָה (הוצג):", options: [{text:"הופעל, ר-א-ה", isCorrect:true}, {text:"הופעל, י-ר-ה", isCorrect:false}, {text:"הפעיל, ר-א-ה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מה ההבדל בין הִשְׁתַּגֵּעַ ל-הִשְׁתַּנָּה?", options: [{text:"השתגע משלמים (ש-ג-ע), השתנה מנל\"י/ה (ש-נ-ה)", isCorrect:true}, {text:"השתגע נל\"י/ה, השתנה שלמים", isCorrect:false}, {text:"אותה גזרה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "השורש י-נ-ק בהפעיל הווה (חריג):", options: [{text:"מֵינִיקָה", isCorrect:true}, {text:"מוֹנִיקָה", isCorrect:false}, {text:"מַנְקִיקָה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "תצורת השם של 'תַּפוּזִינָה':", options: [{text:"בסיס + צורן סופי (-ינה)", isCorrect:true}, {text:"הלחם בסיסים", isCorrect:false}, {text:"ראשי תיבות", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "השורש ל-ק-ח בעתיד גוף 'הוא':", options: [{text:"יִקַּח (חפ\"ל שמתנהג כחפ\"נ)", isCorrect:true}, {text:"יִלְקַח", isCorrect:false}, {text:"יִקָּח", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "עתיד אנחנו של ר-צ-ה (בניין קל):", options: [{text:"נִרְצֶה", isCorrect:true}, {text:"נַרְצֶה", isCorrect:false}, {text:"נִרְצָה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מְבֻלֶּה - ניתוח מדויק:", options: [{text:"בניין פֻּעַל, שורש ב-ל-ה", isCorrect:true}, {text:"בניין פִּעֵל, שורש ב-ל-ה", isCorrect:false}, {text:"הֻפְעַל, שורש ב-ו-ל", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "ציווי נ-ת-נ (אתה):", options: [{text:"תֵּן", isCorrect:true}, {text:"נְתֵן", isCorrect:false}, {text:"תִּתֵּן", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מה השורש של הוּדָה?", options: [{text:"י-ד-ה (נפי/ו מעורב נל\"י/ה)", isCorrect:true}, {text:"ו-ד-ה", isCorrect:false}, {text:"ה-ד-ה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "שם הפועל של נ-ג-ש בקל:", options: [{text:"לָגֶשֶׁת", isCorrect:true}, {text:"לִנְגֹּשׁ", isCorrect:false}, {text:"לְהַגִּישׁ", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "השורש ר-פ-א בפיעל עבר (הוא):", options: [{text:"רִפֵּא", isCorrect:true}, {text:"רָפָא", isCorrect:false}, {text:"הִרְפִּיא", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "הופעל שורש י-ר-ד בעבר:", options: [{text:"הוּרַד", isCorrect:true}, {text:"הוֹרַד", isCorrect:false}, {text:"הוּרִיד", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "בחר את התקין (8 זוגות):", options: [{text:"שְׁמוֹנָה זוגות אופניים", isCorrect:true, rationale:"זוג הוא זכר."}, {text:"שְׁמוֹנֶה זוגות", isCorrect:false}, {text:"שְׁמוֹנַת זוגות", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "השורש והבניין של נִזַּק:", options: [{text:"נ-ז-ק, נפעל", isCorrect:true, rationale:"התלכדות נ' בניין ונ' שורש."}, {text:"ז-ו-ק, נפעל", isCorrect:false}, {text:"נ-ז-ק, קל", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מהי הצורה התקנית ל'יצוק' (י-צ-ק) בעתיד (הוא)?", options: [{text:"יִצֹּק", isCorrect:true, rationale:"חפ\"נ מובהק."}, {text:"יִנְצֹק", isCorrect:false}, {text:"יָצוּק", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "המילה 'מוֹרֶה' (כיוון, הצביע):", options: [{text:"שורש י-ר-ה, הפעיל הווה", isCorrect:true}, {text:"שורש מ-ר-ה, קל הווה", isCorrect:false}, {text:"שורש מ-ו-ר, הפעיל", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "האות 'ת' במילה 'הִתְחַלָּה':", options: [{text:"תבנית המשקל (התקטלה)", isCorrect:true, rationale:"שורש ח-ל-ל, משקל התפעלות/התקטלה."}, {text:"שורש", isCorrect:false}, {text:"אית\"ן", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מִיסוּד (שורש ומשקל):", options: [{text:"י-ס-ד, פיעל", isCorrect:true, rationale:"י' בשווא נשמעת כמו תנועת אי."}, {text:"מ-ס-ד, פעל", isCorrect:false}, {text:"י-ס-ד, הפעיל", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "בניין המילה מֻשְׁגֶּבֶת:", options: [{text:"הופעל", isCorrect:true, rationale:"תחילית מֻ, הופעל הווה (שגב)."}, {text:"פועל", isCorrect:false}, {text:"הפעיל", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "הידמות מלאה מתקיימת ב:", options: [{text:"יִפֹּל", isCorrect:true, rationale:"נ+פ -> פּ."}, {text:"יִשְׁמֹר", isCorrect:false}, {text:"יֵרֵד", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "קרא את המספר '13' בזכר נסמך:", options: [{text:"שְׁלוֹשָׁה עָשָׂר (אין נסמך מיוחד)", isCorrect:true, rationale:"ב-11 עד 19 אין צורת נסמך שונה מזכר רגיל."}, {text:"שְׁלֹשֶׁת עָשָׂר", isCorrect:false}, {text:"שְׁלוֹשׁ עֶשְׂרֵה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "צורת העבר (היא) של שורש ת-מ-מ (כפולים):", options: [{text:"תַּמָּה", isCorrect:true}, {text:"תָּמְמָה", isCorrect:false}, {text:"תּוֹמָה", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מַחְשֵׁף (מכשיר) נוצר מ:", options: [{text:"שורש ח-ש-פ ומשקל מַקְטֵל", isCorrect:true}, {text:"בסיס חשף + ף", isCorrect:false}, {text:"הלחם בסיסים", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "מה השורש של הֵעִיד?", options: [{text:"ע-ו-ד", isCorrect:true, rationale:"נעו\"י בהפעיל (העיד - עדות)."}, {text:"י-ע-ד", isCorrect:false}, {text:"ע-י-ד", isCorrect:false}] },
+            { difficulty: "mega-degree", category: "אקדמיה", question: "כיצד אומרים 3,000 שקלים?", options: [{text:"שְׁלֹשֶׁת אֲלָפִים שקלים", isCorrect:true}, {text:"שְׁלוֹשָׁה אֲלָפִים", isCorrect:false}, {text:"שָׁלוֹשׁ אֲלָפִים", isCorrect:false}] }
         ];
 
         // ==========================================
@@ -641,8 +852,9 @@
                         <div class="bg-white p-6 rounded-3xl shadow-md border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
                             ${Object.values(appData).map(mod => {
                                 const prog = userProgress.modules[mod.id] || {};
+                                // Calculate max possible out of 30 items per module (10 easy, 10 med, 10 hard)
                                 const currentScore = (prog.easy?.score||0) + (prog.medium?.score||0) + (prog.hard?.score||0);
-                                const totalPossible = mod.quiz.length;
+                                const totalPossible = 30; // 10 per difficulty
                                 const percent = totalPossible > 0 ? Math.round((currentScore / totalPossible) * 100) : 0;
                                 const colorClass = percent === 100 ? 'text-green-600' : (percent > 0 ? 'text-secondary' : 'text-gray-400');
                                 const bgClass = percent === 100 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100';
@@ -670,8 +882,8 @@
                 labels.push(mod.label);
                 const p = userProgress.modules[mod.id] || {};
                 const currentScore = (p.easy?.score||0) + (p.medium?.score||0) + (p.hard?.score||0);
-                const total = mod.quiz.length;
-                dataScores.push(total > 0 ? (currentScore / total) * 100 : 0);
+                const total = 30; // 10 per difficulty
+                dataScores.push((currentScore / total) * 100);
             });
             dashboardChartInstance = new Chart(ctx, {
                 type: 'bar', data: { labels: labels, datasets: [{ label: 'אחוזי הצלחה (%)', data: dataScores, backgroundColor: '#1e3a8a', borderRadius: 6 }] },
@@ -819,8 +1031,10 @@
 
         function startStandardQuiz(diff) {
             currentDifficulty = diff; isReadingQuiz = false; isMegaQuiz = false;
-            currentQuizData = appData[currentModuleId].quiz.filter(q => q.difficulty === diff);
-            currentQuizData.sort(() => 0.5 - Math.random());
+            // Always pull exactly 10 questions for Standard quizzes
+            let pool = appData[currentModuleId].quiz.filter(q => q.difficulty === diff);
+            currentQuizData = pool.sort(() => 0.5 - Math.random()).slice(0, 10);
+            
             document.getElementById('quiz-intro').classList.add('hidden');
             document.getElementById('quiz-layout').classList.remove('hidden');
             resetQuiz();
@@ -849,8 +1063,8 @@
             document.getElementById('quiz-progress').textContent = `שאלה ${currentQuestionIndex + 1} מתוך ${currentQuizData.length}`;
             document.getElementById('quiz-score').textContent = `ניקוד: ${score}`;
             
-            if(isMegaQuiz && currentQ.sourceLabel) {
-                const srcEl = document.getElementById('question-source'); srcEl.textContent = `נושא: ${currentQ.sourceLabel}`; srcEl.classList.remove('hidden');
+            if(isMegaQuiz && currentQ.category) {
+                const srcEl = document.getElementById('question-source'); srcEl.textContent = `נושא: ${currentQ.category}`; srcEl.classList.remove('hidden');
             } else {
                 document.getElementById('question-source').classList.add('hidden');
             }
@@ -916,11 +1130,11 @@
             let message = ""; let bonusXP = 0;
 
             if (isMegaQuiz) {
-                let basePoints = score * XP_RATES[currentDifficulty] * 2; 
+                let basePoints = score * XP_RATES[currentDifficulty]; 
                 if (score > (total/2) && timeLeft > 0) bonusXP = timeLeft; 
                 const totalPointsEarned = basePoints + bonusXP;
                 addXP(totalPointsEarned);
-                if(score > userProgress.megaQuizHighScore) { userProgress.megaQuizHighScore = score; localStorage.setItem('verbHubProgress_v11', JSON.stringify(userProgress)); }
+                if(score > userProgress.megaQuizHighScore) { userProgress.megaQuizHighScore = score; localStorage.setItem('verbHubProgress_v12', JSON.stringify(userProgress)); }
                 message = score === total ? "מדהים! שליטה אבסולוטית בחומר האקדמי." : "כל הכבוד שסיימת את המבחן המסכם.";
                 message += `<br><span class="text-secondary font-bold">+${totalPointsEarned} XP (כולל ${bonusXP} בונוס זמן)</span>`;
             } else if (isReadingQuiz) {
@@ -948,13 +1162,13 @@
         // ==========================================
         function renderMegaQuizIntro() {
             const div = document.createElement('div'); div.className = 'fade-in-up flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8';
-            div.innerHTML = `<div class="text-8xl animate-bounce">🔥</div><h1 class="text-5xl font-extrabold text-gray-900 tracking-tight">המבחן המסכם (Master)</h1><p class="text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">המבחן בודק את הידע מכל הנושאים. הרמה הקשה מכילה מאגר ייחודי ברמת אוניברסיטה!<br><strong>15 שאלות. זמן קצוב.</strong><br>בונוס XP למסיימים מהר.</p>
+            div.innerHTML = `<div class="text-8xl animate-bounce">🔥</div><h1 class="text-5xl font-extrabold text-gray-900 tracking-tight">המבחן המסכם (Master)</h1><p class="text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">המבחן בודק את הידע מכל הנושאים. למבחנים המסכמים יש מאגר שאלות בלעדי משלהם!<br><strong>זמן קצוב וקושי משתנה.</strong><br>בונוס XP משמעותי למסיימים מהר.</p>
                 <div class="bg-red-50 border border-red-200 p-6 rounded-2xl max-w-2xl w-full text-center shadow-lg">
-                    <h3 class="font-bold text-xl mb-4 text-red-800">בחר רמת קושי והתחל שעון:</h3>
+                    <h3 class="font-bold text-xl mb-4 text-red-800">בחר רמת מבחן והתחל שעון:</h3>
                     <div class="flex flex-col sm:flex-row justify-center gap-3">
-                        <button onclick="startMegaQuiz('easy')" class="flex-1 bg-white border-2 border-red-300 text-red-700 px-4 py-3 rounded-lg font-bold hover:bg-red-100 transition shadow-sm">קל (10 דק')</button>
-                        <button onclick="startMegaQuiz('medium')" class="flex-1 bg-white border-2 border-red-400 text-red-800 px-4 py-3 rounded-lg font-bold hover:bg-red-200 transition shadow-sm">רמת בגרות (15 דק')</button>
-                        <button onclick="startMegaQuiz('hard')" class="flex-1 bg-white border-2 border-red-600 text-red-900 px-4 py-3 rounded-lg font-black hover:bg-red-300 transition shadow-md">רמת תואר (20 דק')</button>
+                        <button onclick="startMegaQuiz('mega-medium')" class="flex-1 bg-white border-2 border-red-300 text-red-700 px-4 py-3 rounded-lg font-bold hover:bg-red-100 transition shadow-sm">רמה בינונית<br><span class="text-sm font-normal">15 שאלות | 8 דקות</span></button>
+                        <button onclick="startMegaQuiz('mega-hard')" class="flex-1 bg-white border-2 border-red-400 text-red-800 px-4 py-3 rounded-lg font-bold hover:bg-red-200 transition shadow-sm">רמה קשה<br><span class="text-sm font-normal">20 שאלות | 12 דקות</span></button>
+                        <button onclick="startMegaQuiz('mega-degree')" class="flex-1 bg-white border-2 border-red-600 text-red-900 px-4 py-3 rounded-lg font-black hover:bg-red-300 transition shadow-md">רמת תואר<br><span class="text-sm font-normal">25 שאלות | 18 דקות</span></button>
                     </div>
                 </div>`;
             return div;
@@ -962,28 +1176,22 @@
 
         function startMegaQuiz(diff) {
             currentDifficulty = diff;
-            if(diff === 'easy') timeLeft = 10 * 60;
-            else if(diff === 'medium') timeLeft = 15 * 60;
-            else if(diff === 'hard') timeLeft = 20 * 60;
+            let qCount = 15;
 
-            let allQuestions = [];
-            if(diff === 'hard') {
-                // Pull specifically from the Hard Mega Quiz Pool
-                allQuestions = [...megaQuizPool.filter(q => q.difficulty === 'hard')];
-            } else {
-                // Pull from standard apps
-                Object.values(appData).forEach(mod => {
-                    mod.quiz.filter(q => q.difficulty === diff).forEach(q => allQuestions.push({...q, sourceLabel: mod.label}));
-                });
-            }
+            if(diff === 'mega-medium') { timeLeft = 8 * 60; qCount = 15; }
+            else if(diff === 'mega-hard') { timeLeft = 12 * 60; qCount = 20; }
+            else if(diff === 'mega-degree') { timeLeft = 18 * 60; qCount = 25; }
+
+            let allQuestions = megaQuizPool.filter(q => q.difficulty === diff);
             
             allQuestions.sort(() => 0.5 - Math.random());
-            currentQuizData = allQuestions.slice(0, 15); 
+            currentQuizData = allQuestions.slice(0, qCount); 
             
             isMegaQuiz = true; isReadingQuiz = false;
             
+            let titleText = diff === 'mega-medium' ? 'רמה בינונית' : (diff === 'mega-hard' ? 'רמה קשה' : 'רמת תואר');
             const mainContent = document.getElementById('main-content');
-            mainContent.innerHTML = getQuizHTML(`מבחן מסכם (${diff==='easy'?'קל':diff==='medium'?'בגרות':'רמת תואר'})`, 'mega');
+            mainContent.innerHTML = getQuizHTML(`מבחן מסכם (${titleText})`, 'mega');
             
             document.getElementById('quiz-intro').classList.add('hidden');
             document.getElementById('quiz-layout').classList.remove('hidden');
@@ -1011,7 +1219,7 @@
             document.getElementById('quiz-body').classList.add('hidden');
             document.getElementById('quiz-results').classList.remove('hidden');
             document.getElementById('final-score-text').innerHTML = `<strong class="text-red-600 text-3xl block mb-2">נגמר הזמן! ⏰</strong>הספקת לענות נכונה על <strong class="text-primary text-3xl mx-1">${score}</strong> תשובות.`;
-            renderChart();
+            showResults();
         }
 
         // ==========================================
